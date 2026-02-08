@@ -1,0 +1,26 @@
+using System.Globalization;
+using System.Windows;
+using System.Windows.Data;
+
+namespace LogViewer2026.UI.Converters;
+
+public sealed class GreaterThanZeroConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int intValue)
+        {
+            if (targetType == typeof(Visibility))
+            {
+                return intValue > 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            return intValue > 0;
+        }
+        return targetType == typeof(Visibility) ? Visibility.Collapsed : false;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

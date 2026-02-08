@@ -1,0 +1,14 @@
+﻿<Application x:Class="LogViewer2026.UI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LogViewer2026.UI"
+             xmlns:converters="clr-namespace:LogViewer2026.UI.Converters">
+    <Application.Resources>
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:LogLevelToStringConverter x:Key="LogLevelToStringConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:IsZeroConverter x:Key="IsZeroConverter"/>
+        <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
+        <converters:PlusOneConverter x:Key="PlusOneConverter"/>
+    </Application.Resources>
+</Application>

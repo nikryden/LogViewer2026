@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="LogViewer2026.Application/LogViewer2026.Application.csproj" />
+  <Project Path="LogViewer2026.Core/LogViewer2026.Core.csproj" />
+  <Project Path="LogViewer2026.Infrastructure/LogViewer2026.Infrastructure.csproj" />
+  <Project Path="LogViewer2026.UI/LogViewer2026.UI.csproj" />
+</Solution>
