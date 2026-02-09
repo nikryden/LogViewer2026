@@ -190,7 +190,14 @@
                     <Button Command="{Binding UpdateLookingGlassViewCommand}" 
                             Content="🔍 Update" 
                             Padding="5,2"
-                            ToolTip="Update the looking glass with context around the current line"/>
+                            ToolTip="Update the looking glass with context around the current line"
+                            Margin="0,0,10,0"/>
+                    <CheckBox Content="Auto-update on selection" 
+                              IsChecked="{Binding AutoUpdateLookingGlass}"
+                              VerticalAlignment="Center"
+                              ToolTip="Automatically update the looking glass when text is selected in the main editor"
+                              Checked="AutoUpdateCheckBox_Changed"
+                              Unchecked="AutoUpdateCheckBox_Changed"/>
                 </StackPanel>
             </GroupBox.Header>
             <avalon:TextEditor x:Name="LogLookingGlas"

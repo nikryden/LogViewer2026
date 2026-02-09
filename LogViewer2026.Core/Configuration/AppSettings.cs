@@ -14,4 +14,5 @@ public sealed class AppSettings
     public bool LoadMultipleFiles { get; set; } = true;
     public string LastOpenedFolder { get; set; } = string.Empty;
     public int LookingGlassContextLines { get; set; } = 5;
+    public bool AutoUpdateLookingGlass { get; set; } = false;
 }

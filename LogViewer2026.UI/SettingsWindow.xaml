@@ -40,6 +40,15 @@
                                            Foreground="Gray"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Auto-update Looking Glass on selection" 
+                                          IsChecked="{Binding AutoUpdateLookingGlass}" 
+                                          Margin="0,5,0,5"/>
+                                <TextBlock Text="Automatically update the looking glass when text is selected in the main editor" 
+                                           FontStyle="Italic" 
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10"/>
                             </StackPanel>
                         </GroupBox>
 

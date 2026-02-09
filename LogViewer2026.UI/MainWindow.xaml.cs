@@ -54,6 +54,12 @@ public partial class MainWindow : Window
         {
             _viewModel.SelectedText = LogEditor.SelectedText;
             UpdateCurrentLine();
+
+            // Auto-update looking glass if enabled and there's a selection
+            if (_viewModel.AutoUpdateLookingGlass && !string.IsNullOrEmpty(LogEditor.SelectedText))
+            {
+                UpdateLookingGlass();
+            }
         };
 
         // Update current line on caret position change
@@ -293,6 +299,12 @@ public partial class MainWindow : Window
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
         WpfApp.Current.Shutdown();
+    }
+
+    private void AutoUpdateCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        // Save the setting when checkbox is toggled
+        _ = _viewModel.SaveAutoUpdateSettingAsync();
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e)

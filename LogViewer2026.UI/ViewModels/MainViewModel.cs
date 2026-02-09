@@ -87,6 +87,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private LookingGlassData _selectedLookingGlas = new LookingGlassData();
 
     [ObservableProperty]
+    private bool _autoUpdateLookingGlass = false;
+
+    [ObservableProperty]
     private LogLevelOption? _selectedLogLevelOption;
 
     public IEnumerable<LogLevelOption> AvailableLogLevels { get; } = new[]
@@ -131,16 +134,32 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             var settings = await _settingsService.LoadAsync();
             _cachedContextLines = settings.LookingGlassContextLines;
+            AutoUpdateLookingGlass = settings.AutoUpdateLookingGlass;
         }
         catch
         {
             _cachedContextLines = 5; // Default
+            AutoUpdateLookingGlass = false; // Default
         }
     }
 
     public void RefreshSettingsCache()
     {
         _ = LoadSettingsCacheAsync();
+    }
+
+    public async Task SaveAutoUpdateSettingAsync()
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            settings.AutoUpdateLookingGlass = AutoUpdateLookingGlass;
+            await _settingsService.SaveAsync(settings);
+        }
+        catch
+        {
+            // Ignore errors
+        }
     }
 
     [RelayCommand]
