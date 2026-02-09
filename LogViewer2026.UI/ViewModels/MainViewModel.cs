@@ -90,6 +90,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _autoUpdateLookingGlass = false;
 
     [ObservableProperty]
+    private bool _filterSearchResults = false;
+
+    [ObservableProperty]
+    private bool _showLookingGlass = true;
+
+    [ObservableProperty]
     private LogLevelOption? _selectedLogLevelOption;
 
     public IEnumerable<LogLevelOption> AvailableLogLevels { get; } = new[]
@@ -106,6 +112,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnSelectedLogLevelOptionChanged(LogLevelOption? value)
     {
         FilterLevel = value?.Value;
+
+        // Auto-apply filter when level changes (only if we have data loaded)
+        if (!string.IsNullOrEmpty(OriginalLogText))
+        {
+            _ = ApplyFilterAsync();
+        }
     }
 
     public MainViewModel(
@@ -135,11 +147,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             var settings = await _settingsService.LoadAsync();
             _cachedContextLines = settings.LookingGlassContextLines;
             AutoUpdateLookingGlass = settings.AutoUpdateLookingGlass;
+            FilterSearchResults = settings.FilterSearchResults;
+            ShowLookingGlass = settings.ShowLookingGlass;
         }
         catch
         {
             _cachedContextLines = 5; // Default
             AutoUpdateLookingGlass = false; // Default
+            FilterSearchResults = false; // Default
+            ShowLookingGlass = true; // Default
         }
     }
 
@@ -159,6 +175,91 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         catch
         {
             // Ignore errors
+        }
+    }
+
+    public async Task SaveFilterSearchSettingAsync()
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            settings.FilterSearchResults = FilterSearchResults;
+            await _settingsService.SaveAsync(settings);
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    public async Task SaveShowLookingGlassSettingAsync()
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            settings.ShowLookingGlass = ShowLookingGlass;
+            await _settingsService.SaveAsync(settings);
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    public void ApplySearchFilter()
+    {
+        if (string.IsNullOrEmpty(SearchText) || !FilterSearchResults)
+        {
+            // If no search text or filter disabled, restore filtered/original text based on level filter
+            if (FilterLevel == null)
+            {
+                LogText = OriginalLogText;
+                StatusText = $"Showing all {TotalLogCount:N0} lines";
+            }
+            // Note: Don't reapply level filter here to avoid recursion
+            // The level filter is already applied if FilterLevel is set
+            return;
+        }
+
+        // Get the base text (either original or level-filtered)
+        string baseText;
+        if (FilterLevel == null)
+        {
+            baseText = OriginalLogText;
+        }
+        else
+        {
+            // Need to get level-filtered text
+            // If LogText already has level filter applied, use it
+            // Otherwise, filter from original
+            var lines = OriginalLogText.Split('\n');
+            var levelFilteredLines = new List<string>();
+
+            foreach (var line in lines)
+            {
+                if (ContainsLogLevel(line, FilterLevel.Value))
+                {
+                    levelFilteredLines.Add(line);
+                }
+            }
+            baseText = string.Join("\n", levelFilteredLines);
+        }
+
+        // Now apply search filter on top of level filter
+        var searchLines = baseText.Split('\n');
+        var filteredLines = searchLines.Where(line => 
+            line.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        LogText = string.Join("\n", filteredLines);
+
+        // Update status to show both filters if applicable
+        if (FilterLevel == null)
+        {
+            StatusText = $"Showing {filteredLines.Count:N0} lines matching '{SearchText}'";
+        }
+        else
+        {
+            StatusText = $"Showing {filteredLines.Count:N0} lines with level {FilterLevel} matching '{SearchText}'";
         }
     }
 
@@ -320,6 +421,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     if (!string.IsNullOrEmpty(currentLineToPreserve))
                     {
                         OnScrollToLine?.Invoke(currentLineToPreserve, selectedTextToPreserve ?? string.Empty);
+                    }
+
+                    // Apply search filter if enabled
+                    if (FilterSearchResults && !string.IsNullOrEmpty(SearchText))
+                    {
+                        ApplySearchFilter();
                     }
                 });
             });

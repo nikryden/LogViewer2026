@@ -15,7 +15,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="200"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -43,6 +43,11 @@
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}"/>
+                <Separator/>
+                <MenuItem Header="Show Looking _Glass" 
+                          IsCheckable="True"
+                          IsChecked="{Binding ShowLookingGlass, Mode=TwoWay}"
+                          Click="ShowLookingGlass_Click"/>
             </MenuItem>
         </Menu>
 
@@ -83,6 +88,13 @@
                 <Run Text="/"/>
                 <Run Text="{Binding TotalSearchResults, Mode=OneWay}"/>
             </TextBlock>
+            <CheckBox Content="Filter to results" 
+                      IsChecked="{Binding FilterSearchResults}"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      ToolTip="Show only lines matching the search"
+                      Checked="FilterSearchCheckBox_Changed"
+                      Unchecked="FilterSearchCheckBox_Changed"/>
             <Separator/>
 
             <TextBlock Text="Level:" VerticalAlignment="Center" Margin="5,0"/>
@@ -92,7 +104,6 @@
                       DisplayMemberPath="DisplayName"
                       VerticalAlignment="Center" Margin="5,0"/>
 
-            <Button Command="{Binding ApplyFilterCommand}" Content="Apply Filter" Margin="5,0"/>
             <Button Command="{Binding ClearFiltersCommand}" Content="Clear Filters" Margin="5,0"/>
             <Separator/>
 
@@ -115,7 +126,8 @@
                            WordWrap="False"
                            HorizontalScrollBarVisibility="Auto"
                            VerticalScrollBarVisibility="Auto"
-                           Margin="5">
+                           Margin="5"
+                           ContextMenuOpening="LogEditor_ContextMenuOpening">
             <avalon:TextEditor.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Copy" 
@@ -158,7 +170,11 @@
             </avalon:TextEditor.Options>
         </avalon:TextEditor>
 
-        <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch" Background="LightGray"/>
+        <GridSplitter Grid.Row="3" 
+                      Height="5" 
+                      HorizontalAlignment="Stretch" 
+                      Background="LightGray"
+                      Visibility="{Binding ShowLookingGlass, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
         <!-- Progress Bar (Visible when loading) -->
         <Grid Grid.Row="3" Background="White" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -183,7 +199,10 @@
         </Grid>
 
         <!-- Details Panel -->
-        <GroupBox x:Name="LogLookingGlasGroupBox" Grid.Row="4" Margin="5">
+        <GroupBox x:Name="LogLookingGlasGroupBox" 
+                  Grid.Row="4" 
+                  Margin="5"
+                  Visibility="{Binding ShowLookingGlass, Converter={StaticResource BoolToVisibilityConverter}}">
             <GroupBox.Header>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Looking glass" VerticalAlignment="Center" Margin="0,0,10,0"/>
@@ -192,10 +211,10 @@
                             Padding="5,2"
                             ToolTip="Update the looking glass with context around the current line"
                             Margin="0,0,10,0"/>
-                    <CheckBox Content="Auto-update on selection" 
+                    <CheckBox Content="Auto-update on line change" 
                               IsChecked="{Binding AutoUpdateLookingGlass}"
                               VerticalAlignment="Center"
-                              ToolTip="Automatically update the looking glass when text is selected in the main editor"
+                              ToolTip="Automatically update the looking glass when moving to a different line in the main editor"
                               Checked="AutoUpdateCheckBox_Changed"
                               Unchecked="AutoUpdateCheckBox_Changed"/>
                 </StackPanel>
@@ -206,7 +225,40 @@
                                IsReadOnly="True"
                                WordWrap="False"
                                HorizontalScrollBarVisibility="Auto"
-                               VerticalScrollBarVisibility="Auto">
+                               VerticalScrollBarVisibility="Auto"
+                               ContextMenuOpening="LogLookingGlas_ContextMenuOpening">
+                <avalon:TextEditor.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Copy" 
+                                  Command="{Binding CopyToClipboardCommand}"
+                                  InputGestureText="Ctrl+C">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📋" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Copy to Search" 
+                                  Command="{Binding CopyToSearchCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🔍" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Select Whole Line" 
+                                  Command="{Binding SelectWholeLineCommand}"
+                                  InputGestureText="Ctrl+L">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📄" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Select All" 
+                                  Command="{Binding SelectAllCommand}"
+                                  InputGestureText="Ctrl+A">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📑" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </avalon:TextEditor.ContextMenu>
                 <avalon:TextEditor.Options>
                     <avalon:TextEditorOptions ShowSpaces="False"
                                               ShowTabs="False"

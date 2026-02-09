@@ -47,6 +47,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _autoUpdateLookingGlass = false;
 
     [ObservableProperty]
+    private bool _filterSearchResults = false;
+
+    [ObservableProperty]
+    private bool _showLookingGlass = true;
+
+    [ObservableProperty]
     private string _settingsPath = string.Empty;
 
     public SettingsViewModel(ISettingsService settingsService)
@@ -70,6 +76,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         LoadMultipleFiles = settings.LoadMultipleFiles;
         LookingGlassContextLines = settings.LookingGlassContextLines;
         AutoUpdateLookingGlass = settings.AutoUpdateLookingGlass;
+        FilterSearchResults = settings.FilterSearchResults;
+        ShowLookingGlass = settings.ShowLookingGlass;
     }
 
     [RelayCommand]
@@ -87,7 +95,9 @@ public sealed partial class SettingsViewModel : ObservableObject
             MaxRecentFiles = MaxRecentFiles,
             LoadMultipleFiles = LoadMultipleFiles,
             LookingGlassContextLines = LookingGlassContextLines,
-            AutoUpdateLookingGlass = AutoUpdateLookingGlass
+            AutoUpdateLookingGlass = AutoUpdateLookingGlass,
+            FilterSearchResults = FilterSearchResults,
+            ShowLookingGlass = ShowLookingGlass
         };
 
         await _settingsService.SaveAsync(settings);

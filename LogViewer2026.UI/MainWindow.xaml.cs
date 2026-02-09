@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using LogViewer2026.UI.ViewModels;
 using LogViewer2026.UI.Highlighting;
@@ -16,6 +17,8 @@ public partial class MainWindow : Window
     private readonly MainViewModel _viewModel;
     private readonly SearchResultHighlighter _searchHighlighter;
     private readonly OffsetLineNumberMargin _lookingGlassLineNumberMargin;
+    private bool _isLookingGlassContextMenuActive = false;
+    private int _lastLogEditorLineNumber = -1;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -55,17 +58,46 @@ public partial class MainWindow : Window
             _viewModel.SelectedText = LogEditor.SelectedText;
             UpdateCurrentLine();
 
-            // Auto-update looking glass if enabled and there's a selection
-            if (_viewModel.AutoUpdateLookingGlass && !string.IsNullOrEmpty(LogEditor.SelectedText))
-            {
-                UpdateLookingGlass();
-            }
+            // Synchronize selection with LogLookingGlas
+            SyncSelectionToLookingGlass();
         };
 
-        // Update current line on caret position change
+        // Update current line on caret position change and auto-update looking glass if line changed
         LogEditor.TextArea.Caret.PositionChanged += (s, e) =>
         {
             UpdateCurrentLine();
+
+            // Auto-update looking glass if enabled and the line number has changed
+            if (_viewModel.AutoUpdateLookingGlass && LogEditor.Document != null)
+            {
+                var currentLineNumber = LogEditor.Document.GetLineByOffset(LogEditor.CaretOffset).LineNumber;
+
+                if (currentLineNumber != _lastLogEditorLineNumber)
+                {
+                    _lastLogEditorLineNumber = currentLineNumber;
+                    UpdateLookingGlass();
+                }
+            }
+        };
+
+        // Handle text selection in LogLookingGlas
+        LogLookingGlas.TextArea.SelectionChanged += (s, e) =>
+        {
+            // Update SelectedText from LogLookingGlas when selecting there
+            if (LogLookingGlas.IsFocused)
+            {
+                _viewModel.SelectedText = LogLookingGlas.SelectedText;
+                UpdateCurrentLineFromLookingGlass();
+            }
+        };
+
+        // Update current line on caret position change in LogLookingGlas
+        LogLookingGlas.TextArea.Caret.PositionChanged += (s, e) =>
+        {
+            if (LogLookingGlas.IsFocused)
+            {
+                UpdateCurrentLineFromLookingGlass();
+            }
         };
 
         // Handle manual looking glass update
@@ -83,6 +115,9 @@ public partial class MainWindow : Window
         // Focus search box on Ctrl+F
         var findGesture = new KeyGesture(Key.F, ModifierKeys.Control);
         InputBindings.Add(new InputBinding(new RelayCommand(() => SearchBox.Focus()), findGesture));
+
+        // Set initial row height based on ShowLookingGlass setting
+        Loaded += (s, e) => UpdateLookingGlassRowHeight();
     }
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -118,10 +153,22 @@ public partial class MainWindow : Window
                     _viewModel.TotalSearchResults = 0;
                     _viewModel.CurrentSearchResultIndex = -1;
                     LogEditor.TextArea.TextView.Redraw();
+
+                    // Clear search filter if enabled
+                    if (_viewModel.FilterSearchResults)
+                    {
+                        _viewModel.ApplySearchFilter();
+                    }
                 }
                 else
                 {
                     UpdateSearchHighlighting();
+
+                    // Apply search filter if enabled
+                    if (_viewModel.FilterSearchResults)
+                    {
+                        _viewModel.ApplySearchFilter();
+                    }
                 }
             });
         }
@@ -134,6 +181,63 @@ public partial class MainWindow : Window
 
         var line = LogEditor.Document.GetLineByOffset(LogEditor.CaretOffset);
         _viewModel.CurrentLine = LogEditor.Document.GetText(line.Offset, line.Length);
+    }
+
+    private void SyncSelectionToLookingGlass()
+    {
+        // Only sync if there's a selection and LogLookingGlas is visible and has content
+        if (string.IsNullOrEmpty(LogEditor.SelectedText) || 
+            LogLookingGlas.Document == null || 
+            string.IsNullOrEmpty(LogLookingGlas.Text) ||
+            !_viewModel.ShowLookingGlass)
+        {
+            return;
+        }
+
+        try
+        {
+            var selectedText = LogEditor.SelectedText;
+            var lookingGlassText = LogLookingGlas.Text;
+
+            // Find the selected text in LogLookingGlas
+            var index = lookingGlassText.IndexOf(selectedText, StringComparison.Ordinal);
+
+            if (index >= 0)
+            {
+                // Found the text, select it in LogLookingGlas
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        LogLookingGlas.Select(index, selectedText.Length);
+
+                        // Scroll to make the selection visible
+                        if (LogLookingGlas.Document != null)
+                        {
+                            var location = LogLookingGlas.Document.GetLocation(index);
+                            LogLookingGlas.ScrollTo(location.Line, location.Column);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore any errors during selection sync
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            }
+        }
+        catch
+        {
+            // Ignore any errors during selection sync
+        }
+    }
+
+    private void UpdateCurrentLineFromLookingGlass()
+    {
+        if (LogLookingGlas.Document == null)
+            return;
+
+        var line = LogLookingGlas.Document.GetLineByOffset(LogLookingGlas.CaretOffset);
+        _viewModel.CurrentLine = LogLookingGlas.Document.GetText(line.Offset, line.Length);
     }
 
     private void UpdateLookingGlass()
@@ -181,12 +285,19 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
-            if (LogEditor.Document == null)
-                return;
-
-            var line = LogEditor.Document.GetLineByOffset(LogEditor.CaretOffset);
-            LogEditor.Select(line.Offset, line.Length);
-            LogEditor.ScrollTo(line.LineNumber, 0);
+            // Check which editor's context menu is active
+            if (_isLookingGlassContextMenuActive && LogLookingGlas.Document != null)
+            {
+                var line = LogLookingGlas.Document.GetLineByOffset(LogLookingGlas.CaretOffset);
+                LogLookingGlas.Select(line.Offset, line.Length);
+                LogLookingGlas.ScrollTo(line.LineNumber, 0);
+            }
+            else if (LogEditor.Document != null)
+            {
+                var line = LogEditor.Document.GetLineByOffset(LogEditor.CaretOffset);
+                LogEditor.Select(line.Offset, line.Length);
+                LogEditor.ScrollTo(line.LineNumber, 0);
+            }
         });
     }
 
@@ -194,7 +305,15 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
-            LogEditor.SelectAll();
+            // Check which editor's context menu is active
+            if (_isLookingGlassContextMenuActive)
+            {
+                LogLookingGlas.SelectAll();
+            }
+            else
+            {
+                LogEditor.SelectAll();
+            }
         });
     }
 
@@ -307,6 +426,53 @@ public partial class MainWindow : Window
         _ = _viewModel.SaveAutoUpdateSettingAsync();
     }
 
+    private void FilterSearchCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        // Save the setting and apply/remove filter
+        _ = _viewModel.SaveFilterSearchSettingAsync();
+        _viewModel.ApplySearchFilter();
+    }
+
+    private void LogLookingGlas_ContextMenuOpening(object sender, System.Windows.Controls.ContextMenuEventArgs e)
+    {
+        // Set flag to indicate LogLookingGlas context menu is active
+        _isLookingGlassContextMenuActive = true;
+
+        // Update the ViewModel's SelectedText with the currently selected text in LogLookingGlas
+        // This ensures commands in the context menu work with the correct text
+        if (LogLookingGlas != null)
+        {
+            _viewModel.SelectedText = LogLookingGlas.SelectedText;
+
+            // Also update the current line
+            if (LogLookingGlas.Document != null && LogLookingGlas.CaretOffset <= LogLookingGlas.Document.TextLength)
+            {
+                var line = LogLookingGlas.Document.GetLineByOffset(LogLookingGlas.CaretOffset);
+                _viewModel.CurrentLine = LogLookingGlas.Document.GetText(line.Offset, line.Length);
+            }
+        }
+    }
+
+    private void LogEditor_ContextMenuOpening(object sender, System.Windows.Controls.ContextMenuEventArgs e)
+    {
+        // Set flag to indicate LogEditor context menu is active
+        _isLookingGlassContextMenuActive = false;
+
+        // Update the ViewModel's SelectedText with the currently selected text in LogEditor
+        // This ensures commands in the context menu work with the correct text
+        if (LogEditor != null)
+        {
+            _viewModel.SelectedText = LogEditor.SelectedText;
+
+            // Also update the current line
+            if (LogEditor.Document != null && LogEditor.CaretOffset <= LogEditor.Document.TextLength)
+            {
+                var line = LogEditor.Document.GetLineByOffset(LogEditor.CaretOffset);
+                _viewModel.CurrentLine = LogEditor.Document.GetText(line.Offset, line.Length);
+            }
+        }
+    }
+
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
         var serviceProvider = (WpfApp.Current as App)?.Services;
@@ -318,6 +484,33 @@ public partial class MainWindow : Window
 
             // Refresh cached settings after closing settings window
             _viewModel.RefreshSettingsCache();
+        }
+    }
+
+    private void ShowLookingGlass_Click(object sender, RoutedEventArgs e)
+    {
+        // Save the setting when menu item is toggled
+        _ = _viewModel.SaveShowLookingGlassSettingAsync();
+
+        // Update the row definition to properly collapse/expand
+        UpdateLookingGlassRowHeight();
+    }
+
+    private void UpdateLookingGlassRowHeight()
+    {
+        // Row 4 is the Looking Glass row
+        if (_viewModel.ShowLookingGlass)
+        {
+            // When visible, share space with LogEditor
+            LogLookingGlasGroupBox.Parent.GetType().GetProperty("RowDefinitions")?.GetValue(LogLookingGlasGroupBox.Parent);
+            var grid = (Grid)LogLookingGlasGroupBox.Parent;
+            grid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
+        }
+        else
+        {
+            // When hidden, collapse the row
+            var grid = (Grid)LogLookingGlasGroupBox.Parent;
+            grid.RowDefinitions[4].Height = new GridLength(0);
         }
     }
 

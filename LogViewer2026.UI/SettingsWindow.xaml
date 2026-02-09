@@ -41,10 +41,28 @@
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
 
-                                <CheckBox Content="Auto-update Looking Glass on selection" 
+                                <CheckBox Content="Auto-update Looking Glass on line change" 
                                           IsChecked="{Binding AutoUpdateLookingGlass}" 
                                           Margin="0,5,0,5"/>
-                                <TextBlock Text="Automatically update the looking glass when text is selected in the main editor" 
+                                <TextBlock Text="Automatically update the looking glass when moving to a different line in the main editor" 
+                                           FontStyle="Italic" 
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Filter to search results" 
+                                          IsChecked="{Binding FilterSearchResults}" 
+                                          Margin="0,5,0,5"/>
+                                <TextBlock Text="Show only lines matching the search text in the main editor" 
+                                           FontStyle="Italic" 
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Show Looking Glass panel" 
+                                          IsChecked="{Binding ShowLookingGlass}" 
+                                          Margin="0,5,0,5"/>
+                                <TextBlock Text="Show or hide the Looking Glass panel at the bottom of the window" 
                                            FontStyle="Italic" 
                                            Foreground="Gray"
                                            TextWrapping="Wrap"
