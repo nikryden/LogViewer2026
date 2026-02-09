@@ -1,0 +1,169 @@
+name: Create Installer
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'LogViewer2026.UI/LogViewer2026.UI.csproj'
+  SOLUTION_PATH: 'LogViewer2026.sln'
+  BUILD_CONFIGURATION: 'Release'
+  OUTPUT_DIR: '${{ github.workspace }}/publish'
+  INSTALLER_DIR: '${{ github.workspace }}/installer'
+
+jobs:
+  create-installer:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore and build
+      run: |
+        dotnet restore ${{ env.SOLUTION_PATH }}
+        dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+    
+    - name: Publish application (Self-contained)
+      run: |
+        dotnet publish ${{ env.PROJECT_PATH }} `
+          --configuration ${{ env.BUILD_CONFIGURATION }} `
+          --output ${{ env.OUTPUT_DIR }} `
+          --no-build `
+          --self-contained true `
+          --runtime win-x64 `
+          -p:PublishSingleFile=false `
+          -p:PublishReadyToRun=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true
+    
+    - name: Get version
+      id: get_version
+      shell: pwsh
+      run: |
+        if ($env:GITHUB_REF -match 'refs/tags/v(.*)') {
+          $version = $matches[1]
+        } else {
+          $version = "1.0.0"
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
+    
+    - name: Create installer with Inno Setup
+      shell: pwsh
+      run: |
+        # Download Inno Setup
+        $innoSetupUrl = "https://jrsoftware.org/download.php/is.exe"
+        $innoSetupPath = "$env:TEMP\innosetup.exe"
+        
+        Write-Host "Downloading Inno Setup..."
+        Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupPath
+        
+        Write-Host "Installing Inno Setup..."
+        Start-Process -FilePath $innoSetupPath -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait
+        
+        $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+        
+        if (-not (Test-Path $isccPath)) {
+          Write-Error "Inno Setup installation failed"
+          exit 1
+        }
+        
+        Write-Host "Inno Setup installed successfully"
+        echo "ISCC_PATH=$isccPath" >> $env:GITHUB_ENV
+    
+    - name: Create Inno Setup script
+      shell: pwsh
+      run: |
+        $version = "${{ steps.get_version.outputs.VERSION }}"
+        $script = @"
+#define MyAppName "LogViewer2026"
+#define MyAppVersion "$version"
+#define MyAppPublisher "LogViewer2026"
+#define MyAppURL "https://github.com/${{ github.repository }}"
+#define MyAppExeName "LogViewer2026.UI.exe"
+
+[Setup]
+AppId={{YOUR-GUID-HERE}}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}
+DefaultDirName={autopf}\{#MyAppName}
+DefaultGroupName={#MyAppName}
+DisableProgramGroupPage=yes
+LicenseFile=${{ github.workspace }}\LICENSE
+OutputDir=${{ env.INSTALLER_DIR }}
+OutputBaseFilename=LogViewer2026-Setup-v{#MyAppVersion}
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+PrivilegesRequired=lowest
+ArchitecturesInstallIn64BitMode=x64
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+[Files]
+Source: "${{ env.OUTPUT_DIR }}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "${{ env.OUTPUT_DIR }}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+"@
+        
+        New-Item -ItemType Directory -Force -Path "${{ env.INSTALLER_DIR }}" | Out-Null
+        $script | Out-File -FilePath "${{ github.workspace }}\installer.iss" -Encoding ASCII
+        
+        Write-Host "Inno Setup script created"
+    
+    - name: Build installer
+      shell: pwsh
+      run: |
+        & "${{ env.ISCC_PATH }}" "${{ github.workspace }}\installer.iss"
+        
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Installer creation failed"
+          exit $LASTEXITCODE
+        }
+        
+        Write-Host "Installer created successfully"
+        
+        # List installer files
+        Get-ChildItem "${{ env.INSTALLER_DIR }}" | Format-Table Name, Length
+    
+    - name: Upload installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: LogViewer2026-Installer-v${{ steps.get_version.outputs.VERSION }}
+        path: ${{ env.INSTALLER_DIR }}/*.exe
+        retention-days: 90
+    
+    - name: Create Release with Installer
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ env.INSTALLER_DIR }}/*.exe
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,167 @@
+name: Build and Sign LogViewer2026
+
+on:
+  push:
+    branches: [ master, main ]
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  PROJECT_PATH: 'LogViewer2026.UI/LogViewer2026.UI.csproj'
+  SOLUTION_PATH: 'LogViewer2026.sln'
+  BUILD_CONFIGURATION: 'Release'
+  OUTPUT_DIR: '${{ github.workspace }}/publish'
+
+jobs:
+  build-and-sign:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+    
+    - name: Build solution
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+    
+    - name: Run tests
+      run: dotnet test ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
+      continue-on-error: true
+    
+    - name: Publish application
+      run: |
+        dotnet publish ${{ env.PROJECT_PATH }} `
+          --configuration ${{ env.BUILD_CONFIGURATION }} `
+          --output ${{ env.OUTPUT_DIR }} `
+          --no-build `
+          --self-contained false `
+          -p:PublishSingleFile=false `
+          -p:PublishReadyToRun=true
+    
+    - name: Get version
+      id: get_version
+      shell: pwsh
+      run: |
+        if ($env:GITHUB_REF -match 'refs/tags/v(.*)') {
+          $version = $matches[1]
+        } else {
+          $version = "1.0.0-dev.$($env:GITHUB_RUN_NUMBER)"
+        }
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
+    
+    # Code Signing using certificate from secrets
+    - name: Decode certificate
+      if: github.event_name != 'pull_request'
+      shell: pwsh
+      run: |
+        $certificateBytes = [System.Convert]::FromBase64String("${{ secrets.SIGNING_CERTIFICATE_BASE64 }}")
+        $certificatePath = Join-Path $env:GITHUB_WORKSPACE "certificate.pfx"
+        [IO.File]::WriteAllBytes($certificatePath, $certificateBytes)
+        echo "CERTIFICATE_PATH=$certificatePath" >> $env:GITHUB_ENV
+    
+    - name: Sign executable
+      if: github.event_name != 'pull_request'
+      shell: pwsh
+      run: |
+        $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+        
+        # Find the most recent signtool if the above path doesn't exist
+        if (-not (Test-Path $signtool)) {
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | 
+            Where-Object { $_.FullName -like "*\x64\*" } | 
+            Sort-Object FullName -Descending | 
+            Select-Object -First 1 -ExpandProperty FullName
+        }
+        
+        if (-not (Test-Path $signtool)) {
+          Write-Error "SignTool not found"
+          exit 1
+        }
+        
+        Write-Host "Using SignTool: $signtool"
+        
+        $exePath = Join-Path "${{ env.OUTPUT_DIR }}" "LogViewer2026.UI.exe"
+        
+        if (-not (Test-Path $exePath)) {
+          Write-Error "Executable not found at: $exePath"
+          exit 1
+        }
+        
+        Write-Host "Signing: $exePath"
+        
+        & $signtool sign `
+          /f "${{ env.CERTIFICATE_PATH }}" `
+          /p "${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}" `
+          /tr http://timestamp.digicert.com `
+          /td sha256 `
+          /fd sha256 `
+          /d "LogViewer2026 - High-Performance Serilog Log Viewer" `
+          /du "https://github.com/${{ github.repository }}" `
+          "$exePath"
+        
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Signing failed with exit code: $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }
+        
+        Write-Host "Successfully signed executable"
+        
+        # Verify signature
+        & $signtool verify /pa "$exePath"
+    
+    - name: Remove certificate
+      if: always()
+      shell: pwsh
+      run: |
+        if ($env:CERTIFICATE_PATH -and (Test-Path $env:CERTIFICATE_PATH)) {
+          Remove-Item $env:CERTIFICATE_PATH -Force
+          Write-Host "Certificate file removed"
+        }
+    
+    - name: Create ZIP archive
+      shell: pwsh
+      run: |
+        $archiveName = "LogViewer2026-v${{ steps.get_version.outputs.VERSION }}-windows.zip"
+        Compress-Archive -Path "${{ env.OUTPUT_DIR }}\*" -DestinationPath "${{ github.workspace }}\$archiveName"
+        echo "ARCHIVE_NAME=$archiveName" >> $env:GITHUB_ENV
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: LogViewer2026-v${{ steps.get_version.outputs.VERSION }}
+        path: ${{ env.OUTPUT_DIR }}
+        retention-days: 30
+    
+    - name: Upload ZIP artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: LogViewer2026-v${{ steps.get_version.outputs.VERSION }}-zip
+        path: ${{ github.workspace }}/${{ env.ARCHIVE_NAME }}
+        retention-days: 90
+    
+    # Create GitHub Release for tags
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ${{ github.workspace }}/${{ env.ARCHIVE_NAME }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
