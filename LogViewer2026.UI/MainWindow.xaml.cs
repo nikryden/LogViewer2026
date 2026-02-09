@@ -2,9 +2,11 @@
 using System.Windows.Input;
 using LogViewer2026.UI.ViewModels;
 using LogViewer2026.UI.Highlighting;
+using LogViewer2026.UI.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
 using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Editing;
 using WpfApp = System.Windows.Application;
 
 namespace LogViewer2026.UI;
@@ -13,6 +15,7 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private readonly SearchResultHighlighter _searchHighlighter;
+    private readonly OffsetLineNumberMargin _lookingGlassLineNumberMargin;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -22,6 +25,12 @@ public partial class MainWindow : Window
 
         // Set up AvalonEdit
         LogEditor.SyntaxHighlighting = LogHighlighting.CreateLogHighlighting();
+        LogLookingGlas.SyntaxHighlighting = LogHighlighting.CreateLogHighlighting();
+
+        // Replace default line number margin with custom offset margin for LogLookingGlas
+        LogLookingGlas.ShowLineNumbers = false; // Disable default line numbers
+        _lookingGlassLineNumberMargin = new OffsetLineNumberMargin();
+        LogLookingGlas.TextArea.LeftMargins.Insert(0, _lookingGlassLineNumberMargin);
 
         // Set up search result highlighting
         _searchHighlighter = new SearchResultHighlighter();
@@ -32,6 +41,9 @@ public partial class MainWindow : Window
 
         // Handle search result navigation
         _viewModel.OnSearchResultChanged += NavigateToSearchResult;
+
+        // Handle scroll to line (for preserving position after filter)
+        _viewModel.OnScrollToLine += ScrollToLine;
 
         // Handle editor actions
         _viewModel.OnSelectWholeLineRequested += SelectWholeLine;
@@ -45,7 +57,13 @@ public partial class MainWindow : Window
         };
 
         // Update current line on caret position change
-        LogEditor.TextArea.Caret.PositionChanged += (s, e) => UpdateCurrentLine();
+        LogEditor.TextArea.Caret.PositionChanged += (s, e) =>
+        {
+            UpdateCurrentLine();
+        };
+
+        // Handle manual looking glass update
+        _viewModel.OnUpdateLookingGlassRequested += UpdateLookingGlass;
 
         // Keyboard shortcuts
         var findNextGesture = new KeyGesture(Key.F3);
@@ -112,6 +130,47 @@ public partial class MainWindow : Window
         _viewModel.CurrentLine = LogEditor.Document.GetText(line.Offset, line.Length);
     }
 
+    private void UpdateLookingGlass()
+    {
+        if (LogEditor.Document == null || string.IsNullOrEmpty(_viewModel.OriginalLogText))
+            return;
+
+        var line = LogEditor.Document.GetLineByOffset(LogEditor.CaretOffset);
+        var lineNumber = line.LineNumber;
+        var selectedLength = LogEditor.SelectionLength;
+
+        // Update the looking glass with context
+        _viewModel.UpdateLookingGlass(lineNumber, LogEditor.SelectionStart, selectedLength, LogEditor.Text);
+
+        // Update the looking glass editor
+        Dispatcher.Invoke(() =>
+        {
+            LogLookingGlas.Text = _viewModel.SelectedLookingGlas.Text;
+
+            // Update line number offset to match original line numbers
+            _lookingGlassLineNumberMargin.LineNumberOffset = _viewModel.SelectedLookingGlas.StartingLineNumber - 1;
+
+            // Highlight selected text if any
+            if (_viewModel.SelectedLookingGlas.HighlightLength > 0 && 
+                _viewModel.SelectedLookingGlas.HighlightStartOffset >= 0 &&
+                _viewModel.SelectedLookingGlas.HighlightStartOffset < LogLookingGlas.Text.Length)
+            {
+                var highlightLength = Math.Min(
+                    _viewModel.SelectedLookingGlas.HighlightLength,
+                    LogLookingGlas.Text.Length - _viewModel.SelectedLookingGlas.HighlightStartOffset);
+
+                LogLookingGlas.Select(_viewModel.SelectedLookingGlas.HighlightStartOffset, highlightLength);
+
+                // Scroll to the highlighted text
+                if (LogLookingGlas.Document != null)
+                {
+                    var location = LogLookingGlas.Document.GetLocation(_viewModel.SelectedLookingGlas.HighlightStartOffset);
+                    LogLookingGlas.ScrollTo(location.Line, location.Column);
+                }
+            }
+        });
+    }
+
     private void SelectWholeLine()
     {
         Dispatcher.Invoke(() =>
@@ -130,6 +189,62 @@ public partial class MainWindow : Window
         Dispatcher.Invoke(() =>
         {
             LogEditor.SelectAll();
+        });
+    }
+
+    private void ScrollToLine(string lineContent, string selectedText)
+    {
+        if (LogEditor.Document == null || string.IsNullOrEmpty(lineContent))
+            return;
+
+        Dispatcher.Invoke(() =>
+        {
+            // Find the line in the current document
+            var text = LogEditor.Text;
+            var lines = text.Split('\n');
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Trim() == lineContent.Trim())
+                {
+                    // Found the line, scroll to it
+                    var lineNumber = i + 1;
+                    if (lineNumber <= LogEditor.Document.LineCount)
+                    {
+                        var documentLine = LogEditor.Document.GetLineByNumber(lineNumber);
+                        LogEditor.ScrollTo(lineNumber, 0);
+                        LogEditor.CaretOffset = documentLine.Offset;
+
+                        // Try to restore the selection if there was any
+                        if (!string.IsNullOrEmpty(selectedText))
+                        {
+                            var lineText = LogEditor.Document.GetText(documentLine.Offset, documentLine.Length);
+                            var selectionIndex = lineText.IndexOf(selectedText, StringComparison.Ordinal);
+
+                            if (selectionIndex >= 0)
+                            {
+                                // Found the selected text within the line, restore the selection
+                                var selectionStart = documentLine.Offset + selectionIndex;
+                                LogEditor.Select(selectionStart, selectedText.Length);
+
+                                // Scroll to make the selection visible
+                                var location = LogEditor.Document.GetLocation(selectionStart);
+                                LogEditor.ScrollTo(location.Line, location.Column);
+                            }
+                        }
+
+                        // Update the status
+                        _viewModel.StatusText += $" (Restored to line {lineNumber})";
+                    }
+                    return;
+                }
+            }
+
+            // If exact line not found, try to find the closest match or just go to the top
+            if (LogEditor.Document.LineCount > 0)
+            {
+                LogEditor.ScrollToHome();
+            }
         });
     }
 
@@ -188,6 +303,9 @@ public partial class MainWindow : Window
             var settingsWindow = serviceProvider.GetRequiredService<SettingsWindow>();
             settingsWindow.Owner = this;
             settingsWindow.ShowDialog();
+
+            // Refresh cached settings after closing settings window
+            _viewModel.RefreshSettingsCache();
         }
     }
 
@@ -196,8 +314,10 @@ public partial class MainWindow : Window
         base.OnClosed(e);
         _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
         _viewModel.OnSearchResultChanged -= NavigateToSearchResult;
+        _viewModel.OnScrollToLine -= ScrollToLine;
         _viewModel.OnSelectWholeLineRequested -= SelectWholeLine;
         _viewModel.OnSelectAllRequested -= SelectAll;
+        _viewModel.OnUpdateLookingGlassRequested -= UpdateLookingGlass;
 
         if (DataContext is IDisposable disposable)
         {

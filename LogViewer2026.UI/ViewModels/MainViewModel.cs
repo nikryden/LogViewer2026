@@ -27,6 +27,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly IFilterConfigurationService _filterConfigService;
     private readonly ISettingsService _settingsService;
     private bool _isMultiFileMode;
+    private int _cachedContextLines = 5; // Cache the setting
 
     [ObservableProperty]
     private ObservableCollection<LogEntry> _logEntries = [];
@@ -83,6 +84,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private string _loadedFilesInfo = string.Empty;
 
     [ObservableProperty]
+    private LookingGlassData _selectedLookingGlas = new LookingGlassData();
+
+    [ObservableProperty]
     private LogLevelOption? _selectedLogLevelOption;
 
     public IEnumerable<LogLevelOption> AvailableLogLevels { get; } = new[]
@@ -115,7 +119,28 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // Initialize to "All"
         SelectedLogLevelOption = AvailableLogLevels.First();
 
+        // Load settings cache
+        _ = LoadSettingsCacheAsync();
+
         _ = LoadSavedFiltersAsync();
+    }
+
+    private async Task LoadSettingsCacheAsync()
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            _cachedContextLines = settings.LookingGlassContextLines;
+        }
+        catch
+        {
+            _cachedContextLines = 5; // Default
+        }
+    }
+
+    public void RefreshSettingsCache()
+    {
+        _ = LoadSettingsCacheAsync();
     }
 
     [RelayCommand]
@@ -215,6 +240,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     public event Action<int>? OnSearchResultChanged;
+    public event Action<string, string>? OnScrollToLine; // lineContent, selectedText
 
     [RelayCommand]
     private async Task ApplyFilterAsync()
@@ -224,6 +250,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             StatusText = "No log file loaded";
             return;
         }
+
+        // Save the current line content and selected text to restore position after filtering
+        var currentLineToPreserve = CurrentLine;
+        var selectedTextToPreserve = SelectedText;
 
         IsLoading = true;
         StatusText = "Applying filter...";
@@ -265,6 +295,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     else
                     {
                         StatusText = $"Filtered to {filteredCount:N0} lines with level: {FilterLevel}";
+                    }
+
+                    // Try to restore position to the same line with selection
+                    if (!string.IsNullOrEmpty(currentLineToPreserve))
+                    {
+                        OnScrollToLine?.Invoke(currentLineToPreserve, selectedTextToPreserve ?? string.Empty);
                     }
                 });
             });
@@ -331,6 +367,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ClearFilters()
     {
+        // Save the current line content and selected text to restore position after clearing filters
+        var currentLineToPreserve = CurrentLine;
+        var selectedTextToPreserve = SelectedText;
+
         SelectedLogLevelOption = AvailableLogLevels.First(); // Reset to "All"
         FilterLevel = null;
         FilterStartTime = null;
@@ -342,6 +382,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             LogText = OriginalLogText;
             StatusText = $"Filters cleared - showing all {TotalLogCount:N0} lines";
+
+            // Try to restore position to the same line with selection
+            if (!string.IsNullOrEmpty(currentLineToPreserve))
+            {
+                OnScrollToLine?.Invoke(currentLineToPreserve, selectedTextToPreserve ?? string.Empty);
+            }
         }
         else
         {
@@ -411,8 +457,16 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         OnSelectAllRequested?.Invoke();
     }
 
+    [RelayCommand]
+    private void UpdateLookingGlassView()
+    {
+        // This will be handled by MainWindow.xaml.cs
+        OnUpdateLookingGlassRequested?.Invoke();
+    }
+
     public event Action? OnSelectWholeLineRequested;
     public event Action? OnSelectAllRequested;
+    public event Action? OnUpdateLookingGlassRequested;
 
     [RelayCommand]
     private async Task OpenMultipleFilesAsync()
@@ -695,5 +749,134 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         _logService.Dispose();
         _multiFileLogService?.Dispose();
+    }
+
+    public void UpdateLookingGlass(int selectedLineNumber, int selectedStartOffset, int selectedLength, string currentDisplayedText)
+    {
+        if (string.IsNullOrEmpty(OriginalLogText))
+        {
+            SelectedLookingGlas.Text = string.Empty;
+            return;
+        }
+
+        // Use cached context lines setting
+        var contextLines = _cachedContextLines;
+
+        // Get the current line text from the displayed text (filtered or original)
+        var displayedLines = currentDisplayedText.Split('\n');
+        if (selectedLineNumber <= 0 || selectedLineNumber > displayedLines.Length)
+        {
+            SelectedLookingGlas.Text = string.Empty;
+            return;
+        }
+
+        var currentLineText = displayedLines[selectedLineNumber - 1];
+
+        // Calculate offset within the line for the selection
+        var lineStartOffset = 0;
+        for (int i = 0; i < selectedLineNumber - 1; i++)
+        {
+            lineStartOffset += displayedLines[i].Length + 1; // +1 for newline
+        }
+        var offsetInLine = selectedStartOffset - lineStartOffset;
+
+        // Find this line in the original text
+        var originalLines = OriginalLogText.Split('\n');
+        int originalLineNumber = -1;
+        for (int i = 0; i < originalLines.Length; i++)
+        {
+            if (originalLines[i] == currentLineText)
+            {
+                originalLineNumber = i;
+                break;
+            }
+        }
+
+        if (originalLineNumber == -1)
+        {
+            // Line not found in original text, just show the current line with context from displayed text
+            var startLine = Math.Max(0, selectedLineNumber - contextLines - 1);
+            var endLine = Math.Min(displayedLines.Length - 1, selectedLineNumber + contextLines - 1);
+
+            var contextText = new List<string>();
+            int newHighlightStartOffset = 0;
+
+            for (int i = startLine; i <= endLine; i++)
+            {
+                if (i == selectedLineNumber - 1)
+                {
+                    newHighlightStartOffset = string.Join("\n", contextText).Length;
+                    if (contextText.Count > 0)
+                        newHighlightStartOffset += 1;
+                    // Add the offset within the line
+                    newHighlightStartOffset += Math.Max(0, offsetInLine);
+                }
+                contextText.Add(displayedLines[i]);
+            }
+
+            SelectedLookingGlas.Text = string.Join("\n", contextText);
+            SelectedLookingGlas.HighlightStartOffset = newHighlightStartOffset;
+            SelectedLookingGlas.HighlightLength = selectedLength;
+            SelectedLookingGlas.StartingLineNumber = startLine + 1; // Line numbers are 1-based
+            return;
+        }
+
+        // Use original text with context
+        var originalStartLine = Math.Max(0, originalLineNumber - contextLines);
+        var originalEndLine = Math.Min(originalLines.Length - 1, originalLineNumber + contextLines);
+
+        var originalContextText = new List<string>();
+        int highlightOffset = 0;
+
+        for (int i = originalStartLine; i <= originalEndLine; i++)
+        {
+            if (i == originalLineNumber)
+            {
+                highlightOffset = string.Join("\n", originalContextText).Length;
+                if (originalContextText.Count > 0)
+                    highlightOffset += 1;
+                // Add the offset within the line
+                highlightOffset += Math.Max(0, offsetInLine);
+            }
+            originalContextText.Add(originalLines[i]);
+        }
+
+        SelectedLookingGlas.Text = string.Join("\n", originalContextText);
+        SelectedLookingGlas.HighlightStartOffset = highlightOffset;
+        SelectedLookingGlas.HighlightLength = selectedLength;
+        SelectedLookingGlas.StartingLineNumber = originalStartLine + 1; // Line numbers are 1-based
+    }
+
+
+
+    public class LookingGlassData : ObservableObject
+    {
+        private string _text = string.Empty;
+        public string Text
+        {
+            get => _text;
+            set => SetProperty(ref _text, value);
+        }
+
+        private int _highlightStartOffset = -1;
+        public int HighlightStartOffset
+        {
+            get => _highlightStartOffset;
+            set => SetProperty(ref _highlightStartOffset, value);
+        }
+
+        private int _highlightLength = 0;
+        public int HighlightLength
+        {
+            get => _highlightLength;
+            set => SetProperty(ref _highlightLength, value);
+        }
+
+        private int _startingLineNumber = 1;
+        public int StartingLineNumber
+        {
+            get => _startingLineNumber;
+            set => SetProperty(ref _startingLineNumber, value);
+        }
     }
 }

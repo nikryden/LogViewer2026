@@ -183,22 +183,32 @@
         </Grid>
 
         <!-- Details Panel -->
-        <GroupBox Grid.Row="4" Header="Log Entry Details" Margin="5">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="5" DataContext="{Binding SelectedLogEntry}">
-                    <TextBlock Text="{Binding Message}" FontWeight="Bold" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                    <TextBlock Text="{Binding Exception}" Foreground="Red" TextWrapping="Wrap" 
-                               Visibility="{Binding Exception, Converter={StaticResource NullToVisibilityConverter}}"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                        <TextBlock Text="Timestamp: " FontWeight="Bold"/>
-                        <TextBlock Text="{Binding Timestamp, StringFormat='yyyy-MM-dd HH:mm:ss.fff'}"/>
-                        <TextBlock Text=" | Level: " FontWeight="Bold" Margin="20,0,0,0"/>
-                        <TextBlock Text="{Binding Level}"/>
-                        <TextBlock Text=" | Line: " FontWeight="Bold" Margin="20,0,0,0"/>
-                        <TextBlock Text="{Binding LineNumber}"/>
-                    </StackPanel>
+        <GroupBox x:Name="LogLookingGlasGroupBox" Grid.Row="4" Margin="5">
+            <GroupBox.Header>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Looking glass" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Button Command="{Binding UpdateLookingGlassViewCommand}" 
+                            Content="🔍 Update" 
+                            Padding="5,2"
+                            ToolTip="Update the looking glass with context around the current line"/>
                 </StackPanel>
-            </ScrollViewer>
+            </GroupBox.Header>
+            <avalon:TextEditor x:Name="LogLookingGlas"
+                               FontFamily="Consolas"
+                               FontSize="14"
+                               IsReadOnly="True"
+                               WordWrap="False"
+                               HorizontalScrollBarVisibility="Auto"
+                               VerticalScrollBarVisibility="Auto">
+                <avalon:TextEditor.Options>
+                    <avalon:TextEditorOptions ShowSpaces="False"
+                                              ShowTabs="False"
+                                              ShowEndOfLine="False"
+                                              ShowBoxForControlCharacters="False"
+                                              EnableHyperlinks="True"
+                                              EnableEmailHyperlinks="True"/>
+                </avalon:TextEditor.Options>
+            </avalon:TextEditor>
         </GroupBox>
 
         <!-- Status Bar -->

@@ -13,4 +13,5 @@ public sealed class AppSettings
     public int MaxRecentFiles { get; set; } = 10;
     public bool LoadMultipleFiles { get; set; } = true;
     public string LastOpenedFolder { get; set; } = string.Empty;
+    public int LookingGlassContextLines { get; set; } = 5;
 }

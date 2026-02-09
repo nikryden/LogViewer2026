@@ -32,6 +32,14 @@
 
                                 <Label Content="Max Recent Files:"/>
                                 <TextBox Text="{Binding MaxRecentFiles}" Margin="0,0,0,10"/>
+
+                                <Label Content="Looking Glass Context Lines:"/>
+                                <TextBox Text="{Binding LookingGlassContextLines}" Margin="0,0,0,5"/>
+                                <TextBlock Text="Number of lines to show before and after selected line in Log Looking Glass" 
+                                           FontStyle="Italic" 
+                                           Foreground="Gray"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10"/>
                             </StackPanel>
                         </GroupBox>
 

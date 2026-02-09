@@ -41,6 +41,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _loadMultipleFiles = true;
 
     [ObservableProperty]
+    private int _lookingGlassContextLines = 5;
+
+    [ObservableProperty]
     private string _settingsPath = string.Empty;
 
     public SettingsViewModel(ISettingsService settingsService)
@@ -62,6 +65,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         Theme = settings.Theme;
         MaxRecentFiles = settings.MaxRecentFiles;
         LoadMultipleFiles = settings.LoadMultipleFiles;
+        LookingGlassContextLines = settings.LookingGlassContextLines;
     }
 
     [RelayCommand]
@@ -77,7 +81,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             EnableIndexing = EnableIndexing,
             Theme = Theme,
             MaxRecentFiles = MaxRecentFiles,
-            LoadMultipleFiles = LoadMultipleFiles
+            LoadMultipleFiles = LoadMultipleFiles,
+            LookingGlassContextLines = LookingGlassContextLines
         };
 
         await _settingsService.SaveAsync(settings);
