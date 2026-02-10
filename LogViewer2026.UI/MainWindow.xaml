@@ -73,8 +73,13 @@
                      VerticalAlignment="Center" 
                      Margin="5,0"
                      x:Name="SearchBox"/>
-            <Button Command="{Binding SearchCommand}" Content="🔍 Search" Margin="5,0"/>
-            <Button Command="{Binding FindPreviousCommand}" 
+            <Button Click="ClearSearch_Click" 
+                    Content="✖" 
+                    ToolTip="Clear Search"
+                    Width="25"
+                    Margin="2,0"
+                    FontSize="14"/>
+            <Button Command="{Binding FindPreviousCommand}"
                     Content="⬆️" 
                     ToolTip="Previous Result (Shift+F3)"
                     Width="30"

@@ -718,6 +718,12 @@ public partial class MainWindow : Window
         };
         filterWindow.ShowDialog();
     }
+
+    private void ClearSearch_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.SearchText = string.Empty;
+        SearchBox.Focus();
+    }
 }
 
 // Simple RelayCommand for keyboard shortcuts
