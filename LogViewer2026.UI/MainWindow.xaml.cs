@@ -71,6 +71,13 @@ public partial class MainWindow : Window
                 _selectionSyncTimer.Tick += (_, _) =>
                 {
                     _selectionSyncTimer?.Stop();
+
+                    // Update looking glass first to ensure HighlightStartOffset is current
+                    if (!string.IsNullOrEmpty(LogEditor.SelectedText))
+                    {
+                        UpdateLookingGlass();
+                    }
+
                     SyncSelectionToLookingGlass();
                 };
             }
