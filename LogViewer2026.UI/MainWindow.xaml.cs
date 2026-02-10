@@ -218,25 +218,28 @@ public partial class MainWindow : Window
 
         try
         {
-            var selectedText = LogEditor.SelectedText;
-            var lookingGlassText = LogLookingGlas.Text;
+            // Use the highlight offset already calculated by the ViewModel
+            // This is more accurate than searching for the text
+            var highlightOffset = _viewModel.SelectedLookingGlas.HighlightStartOffset;
+            var highlightLength = _viewModel.SelectedLookingGlas.HighlightLength;
 
-            // Find the selected text in LogLookingGlas
-            var index = lookingGlassText.IndexOf(selectedText, StringComparison.Ordinal);
-
-            if (index >= 0)
+            if (highlightOffset >= 0 && highlightLength > 0 && 
+                highlightOffset < LogLookingGlas.Text.Length)
             {
-                // Found the text, select it in LogLookingGlas at low priority
+                // Calculate the actual length to select (don't exceed text bounds)
+                var actualLength = Math.Min(highlightLength, LogLookingGlas.Text.Length - highlightOffset);
+
+                // Select the text in LogLookingGlas at low priority
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try
                     {
-                        LogLookingGlas.Select(index, selectedText.Length);
+                        LogLookingGlas.Select(highlightOffset, actualLength);
 
                         // Scroll to make the selection visible
                         if (LogLookingGlas.Document != null)
                         {
-                            var location = LogLookingGlas.Document.GetLocation(index);
+                            var location = LogLookingGlas.Document.GetLocation(highlightOffset);
                             LogLookingGlas.ScrollTo(location.Line, location.Column);
                         }
                     }
