@@ -73,7 +73,8 @@ public partial class MainWindow : Window
                     _selectionSyncTimer?.Stop();
 
                     // Update looking glass first to ensure HighlightStartOffset is current
-                    if (!string.IsNullOrEmpty(LogEditor.SelectedText))
+                    // Only if auto-update is enabled
+                    if (_viewModel.AutoUpdateLookingGlass && !string.IsNullOrEmpty(LogEditor.SelectedText))
                     {
                         UpdateLookingGlass();
                     }
