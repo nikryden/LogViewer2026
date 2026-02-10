@@ -95,4 +95,22 @@ public partial class FilterWindow : Window
     {
         Close();
     }
+
+    private void ClearStartDateTime_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.FilterStartTime = null;
+            FilterStartTimeBox.Text = "00:00";
+        }
+    }
+
+    private void ClearEndDateTime_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.FilterEndTime = null;
+            FilterEndTimeBox.Text = "23:59";
+        }
+    }
 }

@@ -66,6 +66,14 @@
                                      ToolTip="Time (HH:mm or HH:mm:ss)"
                                      TextChanged="FilterStartTimeBox_TextChanged"
                                      Text="00:00"/>
+                            <Button Click="ClearStartDateTime_Click"
+                                    Content="✖"
+                                    ToolTip="Clear From Date/Time"
+                                    Width="25"
+                                    Height="25"
+                                    Margin="5,0"
+                                    FontSize="12"
+                                    Padding="0"/>
                         </StackPanel>
 
                         <!-- To Date/Time -->
@@ -85,6 +93,14 @@
                                      ToolTip="Time (HH:mm or HH:mm:ss)"
                                      TextChanged="FilterEndTimeBox_TextChanged"
                                      Text="23:59"/>
+                            <Button Click="ClearEndDateTime_Click"
+                                    Content="✖"
+                                    ToolTip="Clear To Date/Time"
+                                    Width="25"
+                                    Height="25"
+                                    Margin="5,0"
+                                    FontSize="12"
+                                    Padding="0"/>
                         </StackPanel>
 
                         <TextBlock Text="Leave empty for no date/time restrictions" 
