@@ -30,6 +30,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _isMultiFileMode;
 #pragma warning restore CS0414
     private int _cachedContextLines = 5; // Cache the setting
+    private List<int> _originalLineOffsets = new(); // Pre-built line start offsets for O(1) access
 
     [ObservableProperty]
     private ObservableCollection<LogEntry> _logEntries = [];
@@ -166,6 +167,66 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _ = LoadSettingsCacheAsync();
     }
 
+    partial void OnOriginalLogTextChanged(string value)
+    {
+        BuildLineIndex(value);
+    }
+
+    private void BuildLineIndex(string text)
+    {
+        _originalLineOffsets.Clear();
+        if (string.IsNullOrEmpty(text)) return;
+
+        _originalLineOffsets.Add(0);
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '\n')
+                _originalLineOffsets.Add(i + 1);
+        }
+    }
+
+    private string GetOriginalLine(int lineIndex)
+    {
+        if (lineIndex < 0 || lineIndex >= _originalLineOffsets.Count)
+            return string.Empty;
+
+        var start = _originalLineOffsets[lineIndex];
+        int end;
+
+        if (lineIndex + 1 < _originalLineOffsets.Count)
+            end = _originalLineOffsets[lineIndex + 1] - 1; // -1 to exclude \n
+        else
+            end = OriginalLogText.Length;
+
+        // Handle \r\n
+        if (end > start && end <= OriginalLogText.Length && OriginalLogText[end - 1] == '\r')
+            end--;
+
+        return OriginalLogText.Substring(start, end - start);
+    }
+
+    private int FindOriginalLineNumber(string lineText)
+    {
+        var span = lineText.AsSpan();
+        for (int i = 0; i < _originalLineOffsets.Count; i++)
+        {
+            var start = _originalLineOffsets[i];
+            int end;
+            if (i + 1 < _originalLineOffsets.Count)
+                end = _originalLineOffsets[i + 1] - 1;
+            else
+                end = OriginalLogText.Length;
+
+            if (end > start && end <= OriginalLogText.Length && OriginalLogText[end - 1] == '\r')
+                end--;
+
+            var lineLen = end - start;
+            if (lineLen == span.Length && OriginalLogText.AsSpan(start, lineLen).SequenceEqual(span))
+                return i;
+        }
+        return -1;
+    }
+
     public async Task SaveAutoUpdateSettingAsync()
     {
         try
@@ -223,45 +284,43 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        // Get the base text (either original or level-filtered)
-        string baseText;
-        if (FilterLevel == null)
-        {
-            baseText = OriginalLogText;
-        }
-        else
-        {
-            // Need to get level-filtered text
-            // If LogText already has level filter applied, use it
-            // Otherwise, filter from original
-            var lines = OriginalLogText.Split('\n');
-            var levelFilteredLines = new List<string>();
+        // Single-pass: apply both level and search filters without Split/Join
+        var text = OriginalLogText;
+        var sb = new System.Text.StringBuilder();
+        int filteredCount = 0;
+        int lineStart = 0;
+        var searchSpan = SearchText.AsSpan();
 
-            foreach (var line in lines)
+        for (int i = 0; i <= text.Length; i++)
+        {
+            if (i == text.Length || text[i] == '\n')
             {
-                if (ContainsLogLevel(line, FilterLevel.Value))
+                var lineSpan = text.AsSpan(lineStart, i - lineStart);
+
+                bool passesLevel = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
+                bool passesSearch = lineSpan.Contains(searchSpan, StringComparison.OrdinalIgnoreCase);
+
+                if (passesLevel && passesSearch)
                 {
-                    levelFilteredLines.Add(line);
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(lineSpan);
+                    filteredCount++;
                 }
+
+                lineStart = i + 1;
             }
-            baseText = string.Join("\n", levelFilteredLines);
         }
 
-        // Now apply search filter on top of level filter
-        var searchLines = baseText.Split('\n');
-        var filteredLines = searchLines.Where(line => 
-            line.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
-
-        LogText = string.Join("\n", filteredLines);
+        LogText = sb.ToString();
 
         // Update status to show both filters if applicable
         if (FilterLevel == null)
         {
-            StatusText = $"Showing {filteredLines.Count:N0} lines matching '{SearchText}'";
+            StatusText = $"Showing {filteredCount:N0} lines matching '{SearchText}'";
         }
         else
         {
-            StatusText = $"Showing {filteredLines.Count:N0} lines with level {FilterLevel} matching '{SearchText}'";
+            StatusText = $"Showing {filteredCount:N0} lines with level {FilterLevel} matching '{SearchText}'";
         }
     }
 
@@ -384,27 +443,29 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await Task.Run(() =>
             {
-                var lines = OriginalLogText.Split('\n');
-                var filteredLines = new List<string>();
+                var text = OriginalLogText;
+                var sb = new System.Text.StringBuilder();
+                int filteredCount = 0;
+                int lineStart = 0;
 
-                foreach (var line in lines)
+                for (int i = 0; i <= text.Length; i++)
                 {
-                    // If no level filter, include all lines
-                    if (FilterLevel == null)
+                    if (i == text.Length || text[i] == '\n')
                     {
-                        filteredLines.Add(line);
-                        continue;
-                    }
+                        var lineSpan = text.AsSpan(lineStart, i - lineStart);
 
-                    // Check if line contains the log level
-                    if (ContainsLogLevel(line, FilterLevel.Value))
-                    {
-                        filteredLines.Add(line);
+                        if (FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value))
+                        {
+                            if (sb.Length > 0) sb.Append('\n');
+                            sb.Append(lineSpan);
+                            filteredCount++;
+                        }
+
+                        lineStart = i + 1;
                     }
                 }
 
-                var filteredText = string.Join("\n", filteredLines);
-                var filteredCount = filteredLines.Count;
+                var filteredText = sb.ToString();
 
                 WpfApp.Current.Dispatcher.Invoke(() =>
                 {
@@ -443,53 +504,66 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private static readonly Dictionary<LogLevel, string[]> _logLevelPatterns = BuildLogLevelPatterns();
+
+    private static Dictionary<LogLevel, string[]> BuildLogLevelPatterns()
+    {
+        var result = new Dictionary<LogLevel, string[]>();
+
+        foreach (var level in Enum.GetValues<LogLevel>())
+        {
+            var levelStr = level.ToString();
+            var patterns = new List<string>
+            {
+                $"[{levelStr}]", $"[{levelStr.ToUpper()}]", $"[{levelStr.ToLower()}]",
+                $" {levelStr} ", $" {levelStr.ToUpper()} ", $" {levelStr.ToLower()} ",
+                $":{levelStr}:", $":{levelStr.ToUpper()}:", $":{levelStr.ToLower()}:",
+            };
+
+            switch (level)
+            {
+                case LogLevel.Information:
+                    patterns.AddRange(["[INF]", "[INFO]", " INF ", " INFO "]);
+                    break;
+                case LogLevel.Warning:
+                    patterns.AddRange(["[WRN]", "[WARN]", " WRN ", " WARN "]);
+                    break;
+                case LogLevel.Error:
+                    patterns.AddRange(["[ERR]", " ERR "]);
+                    break;
+                case LogLevel.Debug:
+                    patterns.AddRange(["[DBG]", " DBG "]);
+                    break;
+                case LogLevel.Verbose:
+                    patterns.AddRange(["[VRB]", " VRB ", "[TRACE]", " TRACE "]);
+                    break;
+                case LogLevel.Fatal:
+                    patterns.AddRange(["[FTL]", " FTL ", "[CRITICAL]", " CRITICAL "]);
+                    break;
+            }
+
+            result[level] = patterns.ToArray();
+        }
+
+        return result;
+    }
+
     private static bool ContainsLogLevel(string line, LogLevel level)
     {
-        // Common log level patterns
-        var levelStr = level.ToString();
+        return ContainsLogLevel(line.AsSpan(), level);
+    }
 
-        // Check various formats:
-        // [ERROR], [Error], ERROR, Error, [ERR], ERR
-        var patterns = new[]
-        {
-            $"[{levelStr}]",
-            $"[{levelStr.ToUpper()}]",
-            $"[{levelStr.ToLower()}]",
-            $" {levelStr} ",
-            $" {levelStr.ToUpper()} ",
-            $" {levelStr.ToLower()} ",
-            $":{levelStr}:",
-            $":{levelStr.ToUpper()}:",
-            $":{levelStr.ToLower()}:",
-        };
+    private static bool ContainsLogLevel(ReadOnlySpan<char> line, LogLevel level)
+    {
+        if (!_logLevelPatterns.TryGetValue(level, out var patterns))
+            return false;
 
-        // Special cases for common abbreviations
-        if (level == LogLevel.Information)
+        foreach (var pattern in patterns)
         {
-            patterns = patterns.Concat(new[] { "[INF]", "[INFO]", " INF ", " INFO " }).ToArray();
+            if (line.Contains(pattern.AsSpan(), StringComparison.OrdinalIgnoreCase))
+                return true;
         }
-        else if (level == LogLevel.Warning)
-        {
-            patterns = patterns.Concat(new[] { "[WRN]", "[WARN]", " WRN ", " WARN " }).ToArray();
-        }
-        else if (level == LogLevel.Error)
-        {
-            patterns = patterns.Concat(new[] { "[ERR]", " ERR " }).ToArray();
-        }
-        else if (level == LogLevel.Debug)
-        {
-            patterns = patterns.Concat(new[] { "[DBG]", " DBG " }).ToArray();
-        }
-        else if (level == LogLevel.Verbose)
-        {
-            patterns = patterns.Concat(new[] { "[VRB]", " VRB ", "[TRACE]", " TRACE " }).ToArray();
-        }
-        else if (level == LogLevel.Fatal)
-        {
-            patterns = patterns.Concat(new[] { "[FTL]", " FTL ", "[CRITICAL]", " CRITICAL " }).ToArray();
-        }
-
-        return patterns.Any(p => line.Contains(p, StringComparison.OrdinalIgnoreCase));
+        return false;
     }
 
     [RelayCommand]
@@ -890,86 +964,107 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // Use cached context lines setting
         var contextLines = _cachedContextLines;
 
-        // Get the current line text from the displayed text (filtered or original)
-        var displayedLines = currentDisplayedText.Split('\n');
-        if (selectedLineNumber <= 0 || selectedLineNumber > displayedLines.Length)
+        // Get line from displayed text using indexing instead of Split
+        int displayedLineStart = 0;
+        int currentDisplayedLineNumber = 1;
+        string currentLineText = string.Empty;
+
+        for (int i = 0; i <= currentDisplayedText.Length; i++)
+        {
+            if (i == currentDisplayedText.Length || currentDisplayedText[i] == '\n')
+            {
+                if (currentDisplayedLineNumber == selectedLineNumber)
+                {
+                    int end = i;
+                    if (end > displayedLineStart && currentDisplayedText[end - 1] == '\r')
+                        end--;
+                    currentLineText = currentDisplayedText.Substring(displayedLineStart, end - displayedLineStart);
+                    break;
+                }
+                displayedLineStart = i + 1;
+                currentDisplayedLineNumber++;
+            }
+        }
+
+        if (string.IsNullOrEmpty(currentLineText))
         {
             SelectedLookingGlas.Text = string.Empty;
             return;
         }
 
-        var currentLineText = displayedLines[selectedLineNumber - 1];
-
         // Calculate offset within the line for the selection
-        var lineStartOffset = 0;
-        for (int i = 0; i < selectedLineNumber - 1; i++)
+        int lineStartOffset = 0;
+        for (int i = 0; i < selectedLineNumber - 1 && lineStartOffset < currentDisplayedText.Length; i++)
         {
-            lineStartOffset += displayedLines[i].Length + 1; // +1 for newline
+            int nextNewline = currentDisplayedText.IndexOf('\n', lineStartOffset);
+            if (nextNewline < 0) break;
+            lineStartOffset = nextNewline + 1;
         }
         var offsetInLine = selectedStartOffset - lineStartOffset;
 
-        // Find this line in the original text
-        var originalLines = OriginalLogText.Split('\n');
-        int originalLineNumber = -1;
-        for (int i = 0; i < originalLines.Length; i++)
-        {
-            if (originalLines[i] == currentLineText)
-            {
-                originalLineNumber = i;
-                break;
-            }
-        }
+        // Find this line in the original text using the index
+        int originalLineNumber = FindOriginalLineNumber(currentLineText);
 
         if (originalLineNumber == -1)
         {
             // Line not found in original text, just show the current line with context from displayed text
-            var startLine = Math.Max(0, selectedLineNumber - contextLines - 1);
-            var endLine = Math.Min(displayedLines.Length - 1, selectedLineNumber + contextLines - 1);
-
-            var contextText = new List<string>();
+            var sb = new System.Text.StringBuilder();
+            int displayLineNum = 1;
+            int lineStart = 0;
+            int startLine = Math.Max(1, selectedLineNumber - contextLines);
+            int endLine = Math.Min(currentDisplayedLineNumber, selectedLineNumber + contextLines);
             int newHighlightStartOffset = 0;
 
-            for (int i = startLine; i <= endLine; i++)
+            for (int i = 0; i <= currentDisplayedText.Length; i++)
             {
-                if (i == selectedLineNumber - 1)
+                if (i == currentDisplayedText.Length || currentDisplayedText[i] == '\n')
                 {
-                    newHighlightStartOffset = string.Join("\n", contextText).Length;
-                    if (contextText.Count > 0)
-                        newHighlightStartOffset += 1;
-                    // Add the offset within the line
-                    newHighlightStartOffset += Math.Max(0, offsetInLine);
+                    if (displayLineNum >= startLine && displayLineNum <= endLine)
+                    {
+                        if (displayLineNum == selectedLineNumber)
+                        {
+                            newHighlightStartOffset = sb.Length + Math.Max(0, offsetInLine);
+                        }
+
+                        if (sb.Length > 0) sb.Append('\n');
+                        int end = i;
+                        if (end > lineStart && currentDisplayedText[end - 1] == '\r')
+                            end--;
+                        sb.Append(currentDisplayedText.AsSpan(lineStart, end - lineStart));
+                    }
+
+                    displayLineNum++;
+                    if (displayLineNum > endLine) break;
+                    lineStart = i + 1;
                 }
-                contextText.Add(displayedLines[i]);
             }
 
-            SelectedLookingGlas.Text = string.Join("\n", contextText);
+            SelectedLookingGlas.Text = sb.ToString();
             SelectedLookingGlas.HighlightStartOffset = newHighlightStartOffset;
             SelectedLookingGlas.HighlightLength = selectedLength;
-            SelectedLookingGlas.StartingLineNumber = startLine + 1; // Line numbers are 1-based
+            SelectedLookingGlas.StartingLineNumber = startLine;
             return;
         }
 
-        // Use original text with context
+        // Use indexed access to original text
         var originalStartLine = Math.Max(0, originalLineNumber - contextLines);
-        var originalEndLine = Math.Min(originalLines.Length - 1, originalLineNumber + contextLines);
+        var originalEndLine = Math.Min(_originalLineOffsets.Count - 1, originalLineNumber + contextLines);
 
-        var originalContextText = new List<string>();
+        var originalContextText = new System.Text.StringBuilder();
         int highlightOffset = 0;
 
         for (int i = originalStartLine; i <= originalEndLine; i++)
         {
             if (i == originalLineNumber)
             {
-                highlightOffset = string.Join("\n", originalContextText).Length;
-                if (originalContextText.Count > 0)
-                    highlightOffset += 1;
-                // Add the offset within the line
-                highlightOffset += Math.Max(0, offsetInLine);
+                highlightOffset = originalContextText.Length + Math.Max(0, offsetInLine);
             }
-            originalContextText.Add(originalLines[i]);
+            if (originalContextText.Length > 0)
+                originalContextText.Append('\n');
+            originalContextText.Append(GetOriginalLine(i));
         }
 
-        SelectedLookingGlas.Text = string.Join("\n", originalContextText);
+        SelectedLookingGlas.Text = originalContextText.ToString();
         SelectedLookingGlas.HighlightStartOffset = highlightOffset;
         SelectedLookingGlas.HighlightLength = selectedLength;
         SelectedLookingGlas.StartingLineNumber = originalStartLine + 1; // Line numbers are 1-based

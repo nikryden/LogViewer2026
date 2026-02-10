@@ -12,6 +12,9 @@ namespace LogViewer2026.UI.Helpers;
 public class OffsetLineNumberMargin : AbstractMargin
 {
     private int _lineNumberOffset = 0;
+    private static readonly Typeface _cachedTypeface = new(
+        new System.Windows.Media.FontFamily("Consolas"),
+        FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
     public int LineNumberOffset
     {
@@ -28,14 +31,11 @@ public class OffsetLineNumberMargin : AbstractMargin
 
     protected override System.Windows.Size MeasureOverride(System.Windows.Size availableSize)
     {
-        var typeface = new Typeface(new System.Windows.Media.FontFamily("Consolas"), 
-            FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-
         var textToMeasure = new FormattedText(
             new string('9', GetMaxLineNumberDigits()),
             CultureInfo.CurrentCulture,
             System.Windows.FlowDirection.LeftToRight,
-            typeface,
+            _cachedTypeface,
             12,
             System.Windows.Media.Brushes.Black,
             VisualTreeHelper.GetDpi(this).PixelsPerDip);
@@ -53,9 +53,6 @@ public class OffsetLineNumberMargin : AbstractMargin
         drawingContext.DrawRectangle(System.Windows.Media.Brushes.WhiteSmoke, null, 
             new Rect(0, 0, renderSize.Width, renderSize.Height));
 
-        var typeface = new Typeface(new System.Windows.Media.FontFamily("Consolas"), 
-            FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-
         foreach (var line in textView.VisualLines)
         {
             var lineNumber = line.FirstDocumentLine.LineNumber + _lineNumberOffset;
@@ -63,7 +60,7 @@ public class OffsetLineNumberMargin : AbstractMargin
                 lineNumber.ToString(),
                 CultureInfo.CurrentCulture,
                 System.Windows.FlowDirection.LeftToRight,
-                typeface,
+                _cachedTypeface,
                 12,
                 System.Windows.Media.Brushes.Gray,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);

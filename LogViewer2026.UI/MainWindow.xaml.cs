@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private int _lastLogEditorLineNumber = -1;
     private FloatingPanelWindow? _logEditorFloatingWindow;
     private FloatingPanelWindow? _lookingGlassFloatingWindow;
+    private System.Windows.Threading.DispatcherTimer? _selectionSyncTimer;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -60,8 +61,21 @@ public partial class MainWindow : Window
             _viewModel.SelectedText = LogEditor.SelectedText;
             UpdateCurrentLine();
 
-            // Synchronize selection with LogLookingGlas
-            SyncSelectionToLookingGlass();
+            // Throttle synchronization to avoid performance hit during large selections
+            if (_selectionSyncTimer == null)
+            {
+                _selectionSyncTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(150)
+                };
+                _selectionSyncTimer.Tick += (_, _) =>
+                {
+                    _selectionSyncTimer?.Stop();
+                    SyncSelectionToLookingGlass();
+                };
+            }
+            _selectionSyncTimer.Stop();
+            _selectionSyncTimer.Start();
         };
 
         // Update current line on caret position change and auto-update looking glass if line changed
@@ -191,11 +205,13 @@ public partial class MainWindow : Window
 
     private void SyncSelectionToLookingGlass()
     {
-        // Only sync if there's a selection and LogLookingGlas is visible and has content
-        if (string.IsNullOrEmpty(LogEditor.SelectedText) || 
+        // Skip if looking glass is hidden, undocked, or selection is too large (performance)
+        if (string.IsNullOrEmpty(LogEditor.SelectedText) ||
+            LogEditor.SelectedText.Length > 10000 || // Skip sync for very large selections
             LogLookingGlas.Document == null || 
             string.IsNullOrEmpty(LogLookingGlas.Text) ||
-            !_viewModel.ShowLookingGlass)
+            !_viewModel.ShowLookingGlass ||
+            _lookingGlassFloatingWindow != null) // Skip if undocked
         {
             return;
         }
@@ -210,7 +226,7 @@ public partial class MainWindow : Window
 
             if (index >= 0)
             {
-                // Found the text, select it in LogLookingGlas
+                // Found the text, select it in LogLookingGlas at low priority
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try
@@ -649,6 +665,13 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        // Clean up timer
+        if (_selectionSyncTimer != null)
+        {
+            _selectionSyncTimer.Stop();
+            _selectionSyncTimer = null;
+        }
+
         // Close any floating panel windows
         if (_logEditorFloatingWindow != null)
         {
