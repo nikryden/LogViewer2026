@@ -29,8 +29,8 @@ jobs:
     
     - name: Restore and build
       run: |
-        dotnet restore ${{ env.SOLUTION_PATH }}
-        dotnet build ${{ env.SOLUTION_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+        dotnet restore ${{ env.PROJECT_PATH }}
+        dotnet build ${{ env.PROJECT_PATH }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
     
     - name: Publish application (Self-contained)
       run: |
