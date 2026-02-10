@@ -1,4 +1,4 @@
-using LogViewer2026.Core.TestUtilities;
+using LogViewer2026.TestUtilities;
 
 Console.WriteLine("LogViewer2026 Test Data Generator");
 Console.WriteLine("=================================");

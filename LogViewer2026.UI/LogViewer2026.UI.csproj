@@ -20,10 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Microsoft.VisualBasic" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\LogViewer2026.Application\LogViewer2026.Application.csproj" />
     <ProjectReference Include="..\LogViewer2026.Infrastructure\LogViewer2026.Infrastructure.csproj" />
     <ProjectReference Include="..\LogViewer2026.Core\LogViewer2026.Core.csproj" />

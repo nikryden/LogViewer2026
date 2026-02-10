@@ -26,7 +26,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly IMultiFileLogService? _multiFileLogService;
     private readonly IFilterConfigurationService _filterConfigService;
     private readonly ISettingsService _settingsService;
+#pragma warning disable CS0414 // Field is assigned but its value is never used - reserved for future multi-file mode functionality
     private bool _isMultiFileMode;
+#pragma warning restore CS0414
     private int _cachedContextLines = 5; // Cache the setting
 
     [ObservableProperty]

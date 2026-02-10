@@ -88,49 +88,49 @@ jobs:
         $outputDir = "${{ env.OUTPUT_DIR }}"
 
         $script = @"
-#define MyAppName "LogViewer2026"
-#define MyAppVersion "$version"
-#define MyAppPublisher "LogViewer2026"
-#define MyAppURL "https://github.com/$repository"
-#define MyAppExeName "LogViewer2026.UI.exe"
+        #define MyAppName "LogViewer2026"
+        #define MyAppVersion "$version"
+        #define MyAppPublisher "LogViewer2026"
+        #define MyAppURL "https://github.com/$repository"
+        #define MyAppExeName "LogViewer2026.UI.exe"
 
-[Setup]
-AppId=$([guid]::NewGuid().ToString("B"))
-AppName={#MyAppName}
-AppVersion={#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\{#MyAppName}
-DefaultGroupName={#MyAppName}
-DisableProgramGroupPage=yes
-OutputDir=$installerDir
-OutputBaseFilename=LogViewer2026-Setup-v{#MyAppVersion}
-Compression=lzma2
-SolidCompression=yes
-WizardStyle=modern
-PrivilegesRequired=lowest
-ArchitecturesInstallIn64BitMode=x64
+        [Setup]
+        AppId=$([guid]::NewGuid().ToString("B"))
+        AppName={#MyAppName}
+        AppVersion={#MyAppVersion}
+        AppPublisher={#MyAppPublisher}
+        AppPublisherURL={#MyAppURL}
+        AppSupportURL={#MyAppURL}
+        AppUpdatesURL={#MyAppURL}
+        DefaultDirName={autopf}\{#MyAppName}
+        DefaultGroupName={#MyAppName}
+        DisableProgramGroupPage=yes
+        OutputDir=$installerDir
+        OutputBaseFilename=LogViewer2026-Setup-v{#MyAppVersion}
+        Compression=lzma2
+        SolidCompression=yes
+        WizardStyle=modern
+        PrivilegesRequired=lowest
+        ArchitecturesInstallIn64BitMode=x64
 
-[Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
+        [Languages]
+        Name: "english"; MessagesFile: "compiler:Default.isl"
 
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+        [Tasks]
+        Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
-[Files]
-Source: "$outputDir\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "$outputDir\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+        [Files]
+        Source: "$outputDir\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+        Source: "$outputDir\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-[Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+        [Icons]
+        Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+        Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+        Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
-[Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
-"@
+        [Run]
+        Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+        "@
 
         New-Item -ItemType Directory -Force -Path $installerDir | Out-Null
         $script | Out-File -FilePath "$workspace\installer.iss" -Encoding ASCII
