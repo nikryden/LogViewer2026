@@ -1,2 +1,13 @@
 <Solution>
+  <Folder Name="/Tools/">
+    <Project Path="Tools/TestDataGenerator/TestDataGenerator.csproj" />
+  </Folder>
+  <Project Path="LogViewer2026.Application.Tests/LogViewer2026.Application.Tests.csproj" />
+  <Project Path="LogViewer2026.Application/LogViewer2026.Application.csproj" />
+  <Project Path="LogViewer2026.Core.Tests/LogViewer2026.Core.Tests.csproj" />
+  <Project Path="LogViewer2026.Core/LogViewer2026.Core.csproj" />
+  <Project Path="LogViewer2026.Infrastructure.Tests/LogViewer2026.Infrastructure.Tests.csproj" />
+  <Project Path="LogViewer2026.Infrastructure/LogViewer2026.Infrastructure.csproj" />
+  <Project Path="LogViewer2026.UI.Tests/LogViewer2026.UI.Tests.csproj" />
+  <Project Path="LogViewer2026.UI/LogViewer2026.UI.csproj" />
 </Solution>
