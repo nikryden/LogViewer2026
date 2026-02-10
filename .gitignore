@@ -103,3 +103,11 @@ BenchmarkDotNet.Artifacts/
 coverage/
 *.coverage
 *.coveragexml
+
+# Certificate files (sensitive - never commit)
+*.pfx
+*.p12
+*.cer
+*.crt
+*.key
+*.pem
