@@ -40,7 +40,6 @@ jobs:
         dotnet publish ${{ env.PROJECT_PATH }} `
           --configuration ${{ env.BUILD_CONFIGURATION }} `
           --output ${{ env.OUTPUT_DIR }} `
-          --no-build `
           --self-contained false
     
     - name: Upload build artifacts
