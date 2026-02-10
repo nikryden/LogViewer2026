@@ -123,6 +123,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    partial void OnFilterStartTimeChanged(DateTime? value)
+    {
+        // Auto-apply filter when start time changes (only if we have data loaded)
+        if (!string.IsNullOrEmpty(OriginalLogText))
+        {
+            _ = ApplyFilterAsync();
+        }
+    }
+
+    partial void OnFilterEndTimeChanged(DateTime? value)
+    {
+        // Auto-apply filter when end time changes (only if we have data loaded)
+        if (!string.IsNullOrEmpty(OriginalLogText))
+        {
+            _ = ApplyFilterAsync();
+        }
+    }
+
     public MainViewModel(
         ILogService logService, 
         IMultiFileLogService multiFileLogService,
@@ -454,7 +472,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                     {
                         var lineSpan = text.AsSpan(lineStart, i - lineStart);
 
-                        if (FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value))
+                        // Apply all filters: log level AND date/time range
+                        bool passesLevelFilter = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
+                        bool passesDateFilter = PassesDateTimeFilter(lineSpan);
+
+                        if (passesLevelFilter && passesDateFilter)
                         {
                             if (sb.Length > 0) sb.Append('\n');
                             sb.Append(lineSpan);
@@ -471,14 +493,26 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 {
                     LogText = filteredText;
 
-                    if (FilterLevel == null)
+                    // Build status message
+                    var statusParts = new List<string>();
+
+                    if (FilterLevel != null)
+                        statusParts.Add($"level: {FilterLevel}");
+
+                    if (FilterStartTime.HasValue || FilterEndTime.HasValue)
                     {
-                        StatusText = $"Showing all {filteredCount:N0} lines";
+                        if (FilterStartTime.HasValue && FilterEndTime.HasValue)
+                            statusParts.Add($"date: {FilterStartTime.Value:yyyy-MM-dd HH:mm} to {FilterEndTime.Value:yyyy-MM-dd HH:mm}");
+                        else if (FilterStartTime.HasValue)
+                            statusParts.Add($"date: from {FilterStartTime.Value:yyyy-MM-dd HH:mm}");
+                        else if (FilterEndTime.HasValue)
+                            statusParts.Add($"date: until {FilterEndTime.Value:yyyy-MM-dd HH:mm}");
                     }
+
+                    if (statusParts.Count > 0)
+                        StatusText = $"Filtered to {filteredCount:N0} lines with {string.Join(" and ", statusParts)}";
                     else
-                    {
-                        StatusText = $"Filtered to {filteredCount:N0} lines with level: {FilterLevel}";
-                    }
+                        StatusText = $"Showing all {filteredCount:N0} lines";
 
                     // Try to restore position to the same line with selection
                     if (!string.IsNullOrEmpty(currentLineToPreserve))
@@ -564,6 +598,82 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 return true;
         }
         return false;
+    }
+
+    private static DateTime? TryExtractTimestamp(ReadOnlySpan<char> line)
+    {
+        // Common log timestamp patterns at the start of lines:
+        // 2024-01-15 10:30:45
+        // 2024-01-15T10:30:45
+        // [2024-01-15 10:30:45]
+        // 2024-01-15 10:30:45.123
+        // 15/01/2024 10:30:45
+
+        if (line.Length < 10)
+            return null;
+
+        // Try to find a date-like pattern (YYYY-MM-DD or DD/MM/YYYY)
+        for (int i = 0; i < Math.Min(line.Length - 10, 30); i++)
+        {
+            var segment = line.Slice(i, Math.Min(30, line.Length - i));
+
+            // Try to parse various datetime formats
+            var segmentString = segment.ToString();
+
+            // Try ISO format first (most common in logs)
+            if (DateTime.TryParseExact(segmentString.Substring(0, Math.Min(19, segmentString.Length)), 
+                new[] { "yyyy-MM-dd HH:mm:ss", "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd" }, 
+                null, 
+                System.Globalization.DateTimeStyles.None, 
+                out var dt))
+            {
+                return dt;
+            }
+
+            // Try with milliseconds
+            if (segmentString.Length >= 23 && DateTime.TryParseExact(segmentString.Substring(0, 23), 
+                "yyyy-MM-dd HH:mm:ss.fff", 
+                null, 
+                System.Globalization.DateTimeStyles.None, 
+                out dt))
+            {
+                return dt;
+            }
+
+            // Try general parsing as fallback
+            if (DateTime.TryParse(segmentString.Substring(0, Math.Min(20, segmentString.Length)), out dt))
+            {
+                // Sanity check - log dates should be reasonable (between 2000 and 2100)
+                if (dt.Year >= 2000 && dt.Year <= 2100)
+                {
+                    return dt;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private bool PassesDateTimeFilter(ReadOnlySpan<char> line)
+    {
+        // If no date filter is set, pass all lines
+        if (FilterStartTime == null && FilterEndTime == null)
+            return true;
+
+        var timestamp = TryExtractTimestamp(line);
+
+        // If we couldn't extract a timestamp, include the line (might be multi-line log continuation)
+        if (timestamp == null)
+            return true;
+
+        // Check if timestamp is within the range
+        if (FilterStartTime.HasValue && timestamp.Value < FilterStartTime.Value)
+            return false;
+
+        if (FilterEndTime.HasValue && timestamp.Value > FilterEndTime.Value)
+            return false;
+
+        return true;
     }
 
     [RelayCommand]

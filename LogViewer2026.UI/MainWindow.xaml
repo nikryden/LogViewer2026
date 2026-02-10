@@ -107,6 +107,22 @@
                       DisplayMemberPath="DisplayName"
                       VerticalAlignment="Center" Margin="5,0"/>
 
+            <Separator/>
+
+            <TextBlock Text="From:" VerticalAlignment="Center" Margin="5,0"/>
+            <DatePicker SelectedDate="{Binding FilterStartTime, Mode=TwoWay}"
+                        Width="120"
+                        VerticalAlignment="Center"
+                        Margin="5,0"
+                        ToolTip="Filter logs from this date/time (leave empty for no start limit)"/>
+
+            <TextBlock Text="To:" VerticalAlignment="Center" Margin="5,0"/>
+            <DatePicker SelectedDate="{Binding FilterEndTime, Mode=TwoWay}"
+                        Width="120"
+                        VerticalAlignment="Center"
+                        Margin="5,0"
+                        ToolTip="Filter logs until this date/time (leave empty for no end limit)"/>
+
             <Button Command="{Binding ClearFiltersCommand}" Content="Clear Filters" Margin="5,0"/>
             <Separator/>
 
