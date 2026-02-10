@@ -9,7 +9,7 @@ on:
 env:
   DOTNET_VERSION: '10.0.x'
   PROJECT_PATH: 'LogViewer2026.UI/LogViewer2026.UI.csproj'
-  SOLUTION_PATH: 'LogViewer2026.sln'
+  SOLUTION_PATH: 'LogViewer2026.slnx'
   BUILD_CONFIGURATION: 'Release'
   OUTPUT_DIR: '${{ github.workspace }}/publish'
   INSTALLER_DIR: '${{ github.workspace }}/installer'
