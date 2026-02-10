@@ -165,7 +165,7 @@ public partial class MainWindow : Window
         else if (e.PropertyName == nameof(MainViewModel.FilterStartTime))
         {
             // Reset time TextBox if filter was cleared
-            if (_viewModel.FilterStartTime == null && FilterStartTimeBox != null)
+            if (_viewModel?.FilterStartTime == null && FilterStartTimeBox != null)
             {
                 FilterStartTimeBox.Text = "00:00";
             }
@@ -173,7 +173,7 @@ public partial class MainWindow : Window
         else if (e.PropertyName == nameof(MainViewModel.FilterEndTime))
         {
             // Reset time TextBox if filter was cleared
-            if (_viewModel.FilterEndTime == null && FilterEndTimeBox != null)
+            if (_viewModel?.FilterEndTime == null && FilterEndTimeBox != null)
             {
                 FilterEndTimeBox.Text = "23:59";
             }
@@ -718,7 +718,8 @@ public partial class MainWindow : Window
 
     private void FilterStartTimeBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (sender is not System.Windows.Controls.TextBox textBox)
+        // Guard against events during initialization
+        if (_viewModel == null || sender is not System.Windows.Controls.TextBox textBox)
             return;
 
         UpdateFilterDateTime(isStartTime: true, textBox.Text);
@@ -726,7 +727,8 @@ public partial class MainWindow : Window
 
     private void FilterEndTimeBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (sender is not System.Windows.Controls.TextBox textBox)
+        // Guard against events during initialization
+        if (_viewModel == null || sender is not System.Windows.Controls.TextBox textBox)
             return;
 
         UpdateFilterDateTime(isStartTime: false, textBox.Text);
@@ -734,24 +736,30 @@ public partial class MainWindow : Window
 
     private void FilterStartDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
     {
+        // Guard against events during initialization
+        if (_viewModel == null || FilterStartTimeBox == null)
+            return;
+
         // When date changes, preserve the time from the TextBox
-        if (FilterStartTimeBox != null)
-        {
-            UpdateFilterDateTime(isStartTime: true, FilterStartTimeBox.Text);
-        }
+        UpdateFilterDateTime(isStartTime: true, FilterStartTimeBox.Text);
     }
 
     private void FilterEndDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
     {
+        // Guard against events during initialization
+        if (_viewModel == null || FilterEndTimeBox == null)
+            return;
+
         // When date changes, preserve the time from the TextBox
-        if (FilterEndTimeBox != null)
-        {
-            UpdateFilterDateTime(isStartTime: false, FilterEndTimeBox.Text);
-        }
+        UpdateFilterDateTime(isStartTime: false, FilterEndTimeBox.Text);
     }
 
     private void UpdateFilterDateTime(bool isStartTime, string timeText)
     {
+        // Guard against calls during initialization
+        if (_viewModel == null || string.IsNullOrWhiteSpace(timeText))
+            return;
+
         try
         {
             // Get the current date from the DatePicker
@@ -776,7 +784,7 @@ public partial class MainWindow : Window
         }
         catch
         {
-            // Ignore invalid time input
+            // Ignore invalid time input or other errors during initialization
         }
     }
 }
