@@ -110,18 +110,36 @@
             <Separator/>
 
             <TextBlock Text="From:" VerticalAlignment="Center" Margin="5,0"/>
-            <DatePicker SelectedDate="{Binding FilterStartTime, Mode=TwoWay}"
-                        Width="120"
+            <DatePicker x:Name="FilterStartDatePicker"
+                        SelectedDate="{Binding FilterStartTime, Mode=TwoWay}"
+                        Width="110"
                         VerticalAlignment="Center"
-                        Margin="5,0"
-                        ToolTip="Filter logs from this date/time (leave empty for no start limit)"/>
+                        Margin="2,0"
+                        ToolTip="Filter logs from this date"
+                        SelectedDateChanged="FilterStartDatePicker_SelectedDateChanged"/>
+            <TextBox x:Name="FilterStartTimeBox"
+                     Width="60"
+                     VerticalAlignment="Center"
+                     Margin="2,0"
+                     ToolTip="Time (HH:mm or HH:mm:ss)"
+                     TextChanged="FilterStartTimeBox_TextChanged"
+                     Text="00:00"/>
 
             <TextBlock Text="To:" VerticalAlignment="Center" Margin="5,0"/>
-            <DatePicker SelectedDate="{Binding FilterEndTime, Mode=TwoWay}"
-                        Width="120"
+            <DatePicker x:Name="FilterEndDatePicker"
+                        SelectedDate="{Binding FilterEndTime, Mode=TwoWay}"
+                        Width="110"
                         VerticalAlignment="Center"
-                        Margin="5,0"
-                        ToolTip="Filter logs until this date/time (leave empty for no end limit)"/>
+                        Margin="2,0"
+                        ToolTip="Filter logs until this date"
+                        SelectedDateChanged="FilterEndDatePicker_SelectedDateChanged"/>
+            <TextBox x:Name="FilterEndTimeBox"
+                     Width="60"
+                     VerticalAlignment="Center"
+                     Margin="2,0"
+                     ToolTip="Time (HH:mm or HH:mm:ss)"
+                     TextChanged="FilterEndTimeBox_TextChanged"
+                     Text="23:59"/>
 
             <Button Command="{Binding ClearFiltersCommand}" Content="Clear Filters" Margin="5,0"/>
             <Separator/>
