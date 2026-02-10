@@ -76,6 +76,19 @@ jobs:
       if: github.event_name != 'pull_request'
       shell: pwsh
       run: |
+        # Validate secrets
+        if ([string]::IsNullOrWhiteSpace("${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}")) {
+          Write-Error "SIGNING_CERTIFICATE_PASSWORD secret is not set or is empty!"
+          Write-Host "Please add the secret in GitHub: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          exit 1
+        }
+
+        if ([string]::IsNullOrWhiteSpace("${{ secrets.SIGNING_CERTIFICATE_BASE64 }}")) {
+          Write-Error "SIGNING_CERTIFICATE_BASE64 secret is not set or is empty!"
+          Write-Host "Please add the secret in GitHub: https://github.com/${{ github.repository }}/settings/secrets/actions"
+          exit 1
+        }
+
         $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
 
         # Find the most recent signtool if the above path doesn't exist
@@ -104,11 +117,21 @@ jobs:
 
         # Import certificate to store
         try {
-          $password = ConvertTo-SecureString -String "${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}" -AsPlainText -Force
+          $passwordString = "${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}"
+
+          if ([string]::IsNullOrWhiteSpace($passwordString)) {
+            throw "Certificate password is empty"
+          }
+
+          Write-Host "Converting password to SecureString..."
+          $password = ConvertTo-SecureString -String $passwordString -AsPlainText -Force
+
+          Write-Host "Importing certificate from: ${{ env.CERTIFICATE_PATH }}"
           $cert = Import-PfxCertificate -FilePath "${{ env.CERTIFICATE_PATH }}" -CertStoreLocation Cert:\CurrentUser\My -Password $password
           Write-Host "Certificate imported with thumbprint: $($cert.Thumbprint)"
 
           # Sign using certificate from store
+          Write-Host "Signing executable with certificate..."
           & $signtool sign `
             /sha1 $cert.Thumbprint `
             /tr http://timestamp.digicert.com `
@@ -126,6 +149,7 @@ jobs:
           Write-Host "Successfully signed executable"
 
           # Verify signature
+          Write-Host "Verifying signature..."
           & $signtool verify /pa "$exePath"
 
           # Clean up certificate from store
