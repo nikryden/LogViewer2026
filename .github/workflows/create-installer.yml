@@ -82,15 +82,20 @@ jobs:
       shell: pwsh
       run: |
         $version = "${{ steps.get_version.outputs.VERSION }}"
+        $repository = "${{ github.repository }}"
+        $workspace = "${{ github.workspace }}"
+        $installerDir = "${{ env.INSTALLER_DIR }}"
+        $outputDir = "${{ env.OUTPUT_DIR }}"
+
         $script = @"
 #define MyAppName "LogViewer2026"
 #define MyAppVersion "$version"
 #define MyAppPublisher "LogViewer2026"
-#define MyAppURL "https://github.com/${{ github.repository }}"
+#define MyAppURL "https://github.com/$repository"
 #define MyAppExeName "LogViewer2026.UI.exe"
 
 [Setup]
-AppId={{YOUR-GUID-HERE}}
+AppId=$([guid]::NewGuid().ToString("B"))
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -100,8 +105,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-LicenseFile=${{ github.workspace }}\LICENSE
-OutputDir=${{ env.INSTALLER_DIR }}
+OutputDir=$installerDir
 OutputBaseFilename=LogViewer2026-Setup-v{#MyAppVersion}
 Compression=lzma2
 SolidCompression=yes
@@ -116,8 +120,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "${{ env.OUTPUT_DIR }}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "${{ env.OUTPUT_DIR }}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "$outputDir\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "$outputDir\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
@@ -127,10 +131,10 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
 "@
-        
-        New-Item -ItemType Directory -Force -Path "${{ env.INSTALLER_DIR }}" | Out-Null
-        $script | Out-File -FilePath "${{ github.workspace }}\installer.iss" -Encoding ASCII
-        
+
+        New-Item -ItemType Directory -Force -Path $installerDir | Out-Null
+        $script | Out-File -FilePath "$workspace\installer.iss" -Encoding ASCII
+
         Write-Host "Inno Setup script created"
     
     - name: Build installer
