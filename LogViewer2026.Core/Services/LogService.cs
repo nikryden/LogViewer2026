@@ -15,8 +15,13 @@ public sealed class LogService : ILogService
     {
         System.Diagnostics.Debug.WriteLine($"LogService: Reading entire file '{filePath}'...");
 
-        // Simple! Just read all text
-        var text = await Task.Run(() => File.ReadAllText(filePath));
+        // Read with FileShare to allow opening files that are being written to by other processes
+        var text = await Task.Run(() =>
+        {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        });
 
         // Report line count
         var lineCount = GetTotalLineCount(text);

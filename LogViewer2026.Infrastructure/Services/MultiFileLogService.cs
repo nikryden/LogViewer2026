@@ -27,7 +27,12 @@ public sealed class MultiFileLogService : IMultiFileLogService
             if (!File.Exists(filePath))
                 continue;
                 
-            var text = await Task.Run(() => File.ReadAllText(filePath));
+            var text = await Task.Run(() =>
+            {
+                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(stream);
+                return reader.ReadToEnd();
+            });
             allText.AppendLine($"=== File: {Path.GetFileName(filePath)} ===");
             allText.AppendLine(text);
             allText.AppendLine();
