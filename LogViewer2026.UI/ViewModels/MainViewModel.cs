@@ -115,30 +115,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnSelectedLogLevelOptionChanged(LogLevelOption? value)
     {
         FilterLevel = value?.Value;
-
-        // Auto-apply filter when level changes (only if we have data loaded)
-        if (!string.IsNullOrEmpty(OriginalLogText))
-        {
-            _ = ApplyFilterAsync();
-        }
+        // Filter will be applied when user clicks Apply button
     }
 
     partial void OnFilterStartTimeChanged(DateTime? value)
     {
-        // Auto-apply filter when start time changes (only if we have data loaded)
-        if (!string.IsNullOrEmpty(OriginalLogText))
-        {
-            _ = ApplyFilterAsync();
-        }
+        // Filter will be applied when user clicks Apply button
     }
 
     partial void OnFilterEndTimeChanged(DateTime? value)
     {
-        // Auto-apply filter when end time changes (only if we have data loaded)
-        if (!string.IsNullOrEmpty(OriginalLogText))
-        {
-            _ = ApplyFilterAsync();
-        }
+        // Filter will be applied when user clicks Apply button
     }
 
     public MainViewModel(

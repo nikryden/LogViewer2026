@@ -83,8 +83,11 @@ public partial class FilterWindow : Window
 
     private void Apply_Click(object sender, RoutedEventArgs e)
     {
-        // Filters are already applied in real-time via bindings
-        // This button just confirms and closes the window
+        // Apply filters when button is clicked using the command
+        if (_viewModel?.ApplyFilterCommand?.CanExecute(null) == true)
+        {
+            _viewModel.ApplyFilterCommand.Execute(null);
+        }
         DialogResult = true;
     }
 
