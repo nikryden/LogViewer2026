@@ -19,6 +19,8 @@ public partial class MainWindow : Window
     private readonly OffsetLineNumberMargin _lookingGlassLineNumberMargin;
     private bool _isLookingGlassContextMenuActive = false;
     private int _lastLogEditorLineNumber = -1;
+    private FloatingPanelWindow? _logEditorFloatingWindow;
+    private FloatingPanelWindow? _lookingGlassFloatingWindow;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -116,8 +118,12 @@ public partial class MainWindow : Window
         var findGesture = new KeyGesture(Key.F, ModifierKeys.Control);
         InputBindings.Add(new InputBinding(new RelayCommand(() => SearchBox.Focus()), findGesture));
 
-        // Set initial row height based on ShowLookingGlass setting
-        Loaded += (s, e) => UpdateLookingGlassRowHeight();
+        // Set initial row height and splitter visibility based on ShowLookingGlass setting
+        Loaded += (s, e) =>
+        {
+            UpdateLookingGlassRowHeight();
+            UpdateSplitterVisibility();
+        };
     }
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -489,33 +495,174 @@ public partial class MainWindow : Window
 
     private void ShowLookingGlass_Click(object sender, RoutedEventArgs e)
     {
+        // If hiding and currently undocked, dock it back first
+        if (!_viewModel.ShowLookingGlass && _lookingGlassFloatingWindow != null)
+        {
+            DockLookingGlass();
+        }
+
         // Save the setting when menu item is toggled
         _ = _viewModel.SaveShowLookingGlassSettingAsync();
 
         // Update the row definition to properly collapse/expand
         UpdateLookingGlassRowHeight();
+        UpdateSplitterVisibility();
     }
 
     private void UpdateLookingGlassRowHeight()
     {
-        // Row 4 is the Looking Glass row
+        // Don't adjust main grid rows if looking glass is undocked
+        if (_lookingGlassFloatingWindow != null)
+            return;
+
         if (_viewModel.ShowLookingGlass)
         {
-            // When visible, share space with LogEditor
-            LogLookingGlasGroupBox.Parent.GetType().GetProperty("RowDefinitions")?.GetValue(LogLookingGlasGroupBox.Parent);
-            var grid = (Grid)LogLookingGlasGroupBox.Parent;
-            grid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
+            MainGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
         }
         else
         {
-            // When hidden, collapse the row
-            var grid = (Grid)LogLookingGlasGroupBox.Parent;
-            grid.RowDefinitions[4].Height = new GridLength(0);
+            MainGrid.RowDefinitions[4].Height = new GridLength(0);
         }
+    }
+
+    private void ToggleLogEditorDock_Click(object sender, RoutedEventArgs e)
+    {
+        if (_logEditorFloatingWindow == null)
+            UndockLogEditor();
+        else
+            DockLogEditor();
+    }
+
+    private void UndockLogEditor()
+    {
+        MainGrid.Children.Remove(LogEditorPanel);
+        MainGrid.RowDefinitions[2].Height = new GridLength(0);
+
+        _logEditorFloatingWindow = new FloatingPanelWindow
+        {
+            Title = "Log Editor - LogViewer2026",
+            Owner = this,
+            Width = Width * 0.8,
+            Height = Height * 0.5,
+            DataContext = _viewModel
+        };
+        _logEditorFloatingWindow.SetContent(LogEditorPanel);
+        _logEditorFloatingWindow.DockRequested += DockLogEditor;
+
+        LogEditorDockButton.Content = "📌 Dock";
+        LogEditorDockButton.ToolTip = "Dock Log Editor back to the main window";
+        UndockLogEditorMenuItem.Header = "Dock _Log Editor";
+
+        UpdateSplitterVisibility();
+        _logEditorFloatingWindow.Show();
+    }
+
+    private void DockLogEditor()
+    {
+        if (_logEditorFloatingWindow == null) return;
+
+        _logEditorFloatingWindow.RemoveContent();
+        _logEditorFloatingWindow.DockRequested -= DockLogEditor;
+        _logEditorFloatingWindow.ForceClose();
+        _logEditorFloatingWindow = null;
+
+        Grid.SetRow(LogEditorPanel, 2);
+        MainGrid.Children.Add(LogEditorPanel);
+        MainGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
+
+        LogEditorDockButton.Content = "⬜ Undock";
+        LogEditorDockButton.ToolTip = "Undock Log Editor to a separate window";
+        UndockLogEditorMenuItem.Header = "Undock _Log Editor";
+
+        UpdateSplitterVisibility();
+    }
+
+    private void ToggleLookingGlassDock_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lookingGlassFloatingWindow == null)
+            UndockLookingGlass();
+        else
+            DockLookingGlass();
+    }
+
+    private void UndockLookingGlass()
+    {
+        MainGrid.Children.Remove(LogLookingGlasGroupBox);
+        MainGrid.RowDefinitions[4].Height = new GridLength(0);
+
+        // Clear the visibility binding so the panel is always visible in the floating window
+        LogLookingGlasGroupBox.ClearValue(VisibilityProperty);
+        LogLookingGlasGroupBox.Visibility = Visibility.Visible;
+
+        _lookingGlassFloatingWindow = new FloatingPanelWindow
+        {
+            Title = "Looking Glass - LogViewer2026",
+            Owner = this,
+            Width = Width * 0.8,
+            Height = Height * 0.4,
+            DataContext = _viewModel
+        };
+        _lookingGlassFloatingWindow.SetContent(LogLookingGlasGroupBox);
+        _lookingGlassFloatingWindow.DockRequested += DockLookingGlass;
+
+        LookingGlassDockButton.Content = "📌 Dock";
+        LookingGlassDockButton.ToolTip = "Dock Looking Glass back to the main window";
+        UndockLookingGlassMenuItem.Header = "Dock Looking _Glass";
+
+        UpdateSplitterVisibility();
+        _lookingGlassFloatingWindow.Show();
+    }
+
+    private void DockLookingGlass()
+    {
+        if (_lookingGlassFloatingWindow == null) return;
+
+        _lookingGlassFloatingWindow.RemoveContent();
+        _lookingGlassFloatingWindow.DockRequested -= DockLookingGlass;
+        _lookingGlassFloatingWindow.ForceClose();
+        _lookingGlassFloatingWindow = null;
+
+        // Restore the visibility binding
+        var binding = new System.Windows.Data.Binding("ShowLookingGlass")
+        {
+            Converter = (System.Windows.Data.IValueConverter)System.Windows.Application.Current.Resources["BoolToVisibilityConverter"]
+        };
+        LogLookingGlasGroupBox.SetBinding(VisibilityProperty, binding);
+
+        Grid.SetRow(LogLookingGlasGroupBox, 4);
+        MainGrid.Children.Add(LogLookingGlasGroupBox);
+        UpdateLookingGlassRowHeight();
+
+        LookingGlassDockButton.Content = "⬜ Undock";
+        LookingGlassDockButton.ToolTip = "Undock Looking Glass to a separate window";
+        UndockLookingGlassMenuItem.Header = "Undock Looking _Glass";
+
+        UpdateSplitterVisibility();
+    }
+
+    private void UpdateSplitterVisibility()
+    {
+        PanelSplitter.Visibility = (_logEditorFloatingWindow == null && _lookingGlassFloatingWindow == null && _viewModel.ShowLookingGlass)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     protected override void OnClosed(EventArgs e)
     {
+        // Close any floating panel windows
+        if (_logEditorFloatingWindow != null)
+        {
+            _logEditorFloatingWindow.DockRequested -= DockLogEditor;
+            _logEditorFloatingWindow.ForceClose();
+            _logEditorFloatingWindow = null;
+        }
+        if (_lookingGlassFloatingWindow != null)
+        {
+            _lookingGlassFloatingWindow.DockRequested -= DockLookingGlass;
+            _lookingGlassFloatingWindow.ForceClose();
+            _lookingGlassFloatingWindow = null;
+        }
+
         base.OnClosed(e);
         _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
         _viewModel.OnSearchResultChanged -= NavigateToSearchResult;
