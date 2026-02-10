@@ -42,6 +42,8 @@
                 <MenuItem Header="_Import Filters..." Command="{Binding ImportFiltersCommand}"/>
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem Header="_Filter Settings..." Click="OpenFilterWindow_Click" InputGestureText=""/>
+                <Separator/>
                 <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="UndockLogEditorMenuItem" Header="Undock _Log Editor" Click="ToggleLogEditorDock_Click"/>
@@ -100,57 +102,20 @@
                       Unchecked="FilterSearchCheckBox_Changed"/>
             <Separator/>
 
-            <TextBlock Text="Level:" VerticalAlignment="Center" Margin="5,0"/>
-            <ComboBox Width="100" 
-                      ItemsSource="{Binding AvailableLogLevels}"
-                      SelectedItem="{Binding SelectedLogLevelOption, Mode=TwoWay}"
-                      DisplayMemberPath="DisplayName"
-                      VerticalAlignment="Center" Margin="5,0"/>
+            <Button Click="OpenFilterWindow_Click" 
+                    ToolTip="Open Filter Settings Window"
+                    Padding="10,5"
+                    Margin="5,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🔧" FontSize="16" Margin="0,0,5,0"/>
+                    <TextBlock Text="Filters"/>
+                </StackPanel>
+            </Button>
 
-            <Separator/>
-
-            <TextBlock Text="From:" VerticalAlignment="Center" Margin="5,0"/>
-            <DatePicker x:Name="FilterStartDatePicker"
-                        SelectedDate="{Binding FilterStartTime, Mode=TwoWay}"
-                        Width="110"
-                        VerticalAlignment="Center"
-                        Margin="2,0"
-                        ToolTip="Filter logs from this date"
-                        SelectedDateChanged="FilterStartDatePicker_SelectedDateChanged"/>
-            <TextBox x:Name="FilterStartTimeBox"
-                     Width="60"
-                     VerticalAlignment="Center"
-                     Margin="2,0"
-                     ToolTip="Time (HH:mm or HH:mm:ss)"
-                     TextChanged="FilterStartTimeBox_TextChanged"
-                     Text="00:00"/>
-
-            <TextBlock Text="To:" VerticalAlignment="Center" Margin="5,0"/>
-            <DatePicker x:Name="FilterEndDatePicker"
-                        SelectedDate="{Binding FilterEndTime, Mode=TwoWay}"
-                        Width="110"
-                        VerticalAlignment="Center"
-                        Margin="2,0"
-                        ToolTip="Filter logs until this date"
-                        SelectedDateChanged="FilterEndDatePicker_SelectedDateChanged"/>
-            <TextBox x:Name="FilterEndTimeBox"
-                     Width="60"
-                     VerticalAlignment="Center"
-                     Margin="2,0"
-                     ToolTip="Time (HH:mm or HH:mm:ss)"
-                     TextChanged="FilterEndTimeBox_TextChanged"
-                     Text="23:59"/>
-
-            <Button Command="{Binding ClearFiltersCommand}" Content="Clear Filters" Margin="5,0"/>
-            <Separator/>
-
-            <TextBlock Text="Saved Filters:" VerticalAlignment="Center" Margin="5,0"/>
-            <ComboBox Width="150" 
-                      ItemsSource="{Binding SavedFilters}"
-                      SelectedItem="{Binding SelectedFilter}"
-                      DisplayMemberPath="Name"
-                      VerticalAlignment="Center" Margin="5,0"/>
-            <Button Command="{Binding LoadFilterCommand}" Content="Load" Margin="5,0"/>
+            <Button Command="{Binding ClearFiltersCommand}" 
+                    Content="Clear Filters" 
+                    Margin="5,0"
+                    ToolTip="Clear all active filters"/>
         </ToolBar>
 
         <!-- Log Editor Panel -->
