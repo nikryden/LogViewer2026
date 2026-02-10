@@ -77,7 +77,7 @@ jobs:
       shell: pwsh
       run: |
         $signtool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
-        
+
         # Find the most recent signtool if the above path doesn't exist
         if (-not (Test-Path $signtool)) {
           $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | 
@@ -85,42 +85,57 @@ jobs:
             Sort-Object FullName -Descending | 
             Select-Object -First 1 -ExpandProperty FullName
         }
-        
+
         if (-not (Test-Path $signtool)) {
           Write-Error "SignTool not found"
           exit 1
         }
-        
+
         Write-Host "Using SignTool: $signtool"
-        
+
         $exePath = Join-Path "${{ env.OUTPUT_DIR }}" "LogViewer2026.UI.exe"
-        
+
         if (-not (Test-Path $exePath)) {
           Write-Error "Executable not found at: $exePath"
           exit 1
         }
-        
+
         Write-Host "Signing: $exePath"
-        
-        & $signtool sign `
-          /f "${{ env.CERTIFICATE_PATH }}" `
-          /p "${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}" `
-          /tr http://timestamp.digicert.com `
-          /td sha256 `
-          /fd sha256 `
-          /d "LogViewer2026 - High-Performance Serilog Log Viewer" `
-          /du "https://github.com/${{ github.repository }}" `
-          "$exePath"
-        
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "Signing failed with exit code: $LASTEXITCODE"
-          exit $LASTEXITCODE
+
+        # Import certificate to store
+        try {
+          $password = ConvertTo-SecureString -String "${{ secrets.SIGNING_CERTIFICATE_PASSWORD }}" -AsPlainText -Force
+          $cert = Import-PfxCertificate -FilePath "${{ env.CERTIFICATE_PATH }}" -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          Write-Host "Certificate imported with thumbprint: $($cert.Thumbprint)"
+
+          # Sign using certificate from store
+          & $signtool sign `
+            /sha1 $cert.Thumbprint `
+            /tr http://timestamp.digicert.com `
+            /td sha256 `
+            /fd sha256 `
+            /d "LogViewer2026 - High-Performance Serilog Log Viewer" `
+            /du "https://github.com/${{ github.repository }}" `
+            "$exePath"
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Signing failed with exit code: $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+
+          Write-Host "Successfully signed executable"
+
+          # Verify signature
+          & $signtool verify /pa "$exePath"
+
+          # Clean up certificate from store
+          Remove-Item -Path "Cert:\CurrentUser\My\$($cert.Thumbprint)" -Force
+          Write-Host "Certificate removed from store"
         }
-        
-        Write-Host "Successfully signed executable"
-        
-        # Verify signature
-        & $signtool verify /pa "$exePath"
+        catch {
+          Write-Error "Error during signing process: $_"
+          exit 1
+        }
     
     - name: Remove certificate
       if: always()
