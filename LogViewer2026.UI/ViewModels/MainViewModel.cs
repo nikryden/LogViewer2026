@@ -1118,12 +1118,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 {
                     if (displayLineNum >= startLine && displayLineNum <= endLine)
                     {
+                        if (sb.Length > 0) sb.Append('\n');
+
                         if (displayLineNum == selectedLineNumber)
                         {
                             newHighlightStartOffset = sb.Length + Math.Max(0, offsetInLine);
                         }
 
-                        if (sb.Length > 0) sb.Append('\n');
                         int end = i;
                         if (end > lineStart && currentDisplayedText[end - 1] == '\r')
                             end--;
@@ -1152,12 +1153,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         for (int i = originalStartLine; i <= originalEndLine; i++)
         {
+            if (originalContextText.Length > 0)
+                originalContextText.Append('\n');
+
             if (i == originalLineNumber)
             {
                 highlightOffset = originalContextText.Length + Math.Max(0, offsetInLine);
             }
-            if (originalContextText.Length > 0)
-                originalContextText.Append('\n');
+
             originalContextText.Append(GetOriginalLine(i));
         }
 
