@@ -101,6 +101,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         };
 
         await _settingsService.SaveAsync(settings);
+
+        // Apply theme immediately
+        if (System.Windows.Application.Current is App app)
+        {
+            app.ApplyTheme(Theme);
+        }
+
         WpfMessageBox.Show("Settings saved successfully!", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 

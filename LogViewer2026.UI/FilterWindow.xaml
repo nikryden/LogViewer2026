@@ -9,7 +9,9 @@
         Height="600" Width="500"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -37,7 +39,7 @@
                                   Margin="0,0,0,10"/>
                         <TextBlock Text="Show only log entries matching the selected level (click Apply to activate)" 
                                    FontSize="11" 
-                                   Foreground="Gray" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </GroupBox>
@@ -105,7 +107,7 @@
 
                         <TextBlock Text="Leave empty for no date/time restrictions" 
                                    FontSize="11" 
-                                   Foreground="Gray" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </GroupBox>
@@ -121,7 +123,7 @@
                                   Unchecked="FilterSearchCheckBox_Changed"/>
                         <TextBlock Text="When enabled, only lines containing the search text will be displayed" 
                                    FontSize="11" 
-                                   Foreground="Gray" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </GroupBox>
@@ -192,7 +194,7 @@
             <TextBlock Grid.Row="0" 
                        Text="💡 Click Apply to activate filters" 
                        FontSize="11" 
-                       Foreground="DarkBlue" 
+                       Foreground="{DynamicResource PrimaryTextBrush}" 
                        Margin="0,0,0,10"
                        HorizontalAlignment="Center"/>
 

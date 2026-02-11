@@ -8,7 +8,9 @@
         mc:Ignorable="d"
         Title="LogViewer2026 - High-Performance Serilog Log Viewer" 
         Height="800" Width="1400"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
     <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -20,7 +22,7 @@
         </Grid.RowDefinitions>
 
         <!-- Menu Bar -->
-        <Menu Grid.Row="0">
+        <Menu Grid.Row="0" Background="{DynamicResource MenuBackgroundBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}"/>
                 <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}"/>
@@ -72,7 +74,10 @@
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                      VerticalAlignment="Center" 
                      Margin="5,0"
-                     x:Name="SearchBox"/>
+                     x:Name="SearchBox"
+                     Foreground="{DynamicResource PrimaryTextBrush}"
+                     Background="{DynamicResource ControlBackgroundBrush}"
+                     CaretBrush="{DynamicResource PrimaryTextBrush}"/>
             <Button Click="ClearSearch_Click" 
                     Content="✖" 
                     ToolTip="Clear Search"
@@ -129,9 +134,9 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <DockPanel Grid.Row="0" LastChildFill="False" Background="#F0F0F0">
+            <DockPanel Grid.Row="0" LastChildFill="False" Background="{DynamicResource ControlBackgroundBrush}">
                 <TextBlock Text="📝 Log content " FontWeight="SemiBold" VerticalAlignment="Center" Margin="5,3"/>
-                <Button x:Name="LogEditorDockButton" DockPanel.Dock="Right" Content="⬜ Undock" 
+                <Button x:Name="LogEditorDockButton" DockPanel.Dock="Right" Content="⬜ Undock"
                         Click="ToggleLogEditorDock_Click" Padding="8,2" Margin="2" FontSize="11"
                         ToolTip="Undock Log Editor to a separate window"/>
             </DockPanel>
@@ -144,6 +149,9 @@
                                WordWrap="False"
                                HorizontalScrollBarVisibility="Auto"
                                VerticalScrollBarVisibility="Auto"
+                               Background="{DynamicResource EditorBackgroundBrush}"
+                               Foreground="{DynamicResource EditorForegroundBrush}"
+                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
                                ContextMenuOpening="LogEditor_ContextMenuOpening">
                 <avalon:TextEditor.ContextMenu>
                     <ContextMenu>
@@ -191,10 +199,10 @@
         <GridSplitter x:Name="PanelSplitter" Grid.Row="3" 
                       Height="5" 
                       HorizontalAlignment="Stretch" 
-                      Background="LightGray"/>
+                      Background="{DynamicResource BorderBrush}"/>
 
         <!-- Progress Bar (Visible when loading) -->
-        <Grid Grid.Row="3" Background="White" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+        <Grid Grid.Row="3" Background="{DynamicResource WindowBackgroundBrush}" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding ProgressText}" 
                            FontWeight="SemiBold" 
@@ -211,7 +219,7 @@
                            HorizontalAlignment="Center" 
                            Margin="0,5,0,0"
                            FontSize="12"
-                           Foreground="Gray"/>
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
             </StackPanel>
         </Grid>
 
@@ -224,7 +232,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <DockPanel Grid.Row="0" LastChildFill="False" Background="#F0F0F0">
+            <DockPanel Grid.Row="0" LastChildFill="False" Background="{DynamicResource ControlBackgroundBrush}">
                 <TextBlock Text="🔍 Looking glass" FontWeight="SemiBold" VerticalAlignment="Center" Margin="5,3"/>
                 <Button Command="{Binding UpdateLookingGlassViewCommand}" 
                         Content="🔍 Update" 
@@ -247,9 +255,13 @@
                                FontFamily="Consolas"
                                FontSize="14"
                                IsReadOnly="True"
+                               ShowLineNumbers="True"
                                WordWrap="False"
                                HorizontalScrollBarVisibility="Auto"
                                VerticalScrollBarVisibility="Auto"
+                               Background="{DynamicResource EditorBackgroundBrush}"
+                               Foreground="{DynamicResource EditorForegroundBrush}"
+                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
                                ContextMenuOpening="LogLookingGlas_ContextMenuOpening">
                 <avalon:TextEditor.ContextMenu>
                     <ContextMenu>

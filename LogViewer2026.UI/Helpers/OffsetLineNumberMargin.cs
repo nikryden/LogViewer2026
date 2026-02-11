@@ -50,7 +50,15 @@ public class OffsetLineNumberMargin : AbstractMargin
             return;
 
         var renderSize = RenderSize;
-        drawingContext.DrawRectangle(System.Windows.Media.Brushes.WhiteSmoke, null, 
+
+        // Get theme colors from application resources
+        var app = System.Windows.Application.Current;
+        var backgroundBrush = app.TryFindResource("ControlBackgroundBrush") as SolidColorBrush 
+            ?? new SolidColorBrush(System.Windows.Media.Color.FromRgb(37, 37, 38)); // Default dark background
+        var foregroundBrush = app.TryFindResource("SecondaryTextBrush") as SolidColorBrush 
+            ?? new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 128, 128)); // Default gray
+
+        drawingContext.DrawRectangle(backgroundBrush, null, 
             new Rect(0, 0, renderSize.Width, renderSize.Height));
 
         foreach (var line in textView.VisualLines)
@@ -62,7 +70,7 @@ public class OffsetLineNumberMargin : AbstractMargin
                 System.Windows.FlowDirection.LeftToRight,
                 _cachedTypeface,
                 12,
-                System.Windows.Media.Brushes.Gray,
+                foregroundBrush,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             var y = line.VisualTop - textView.VerticalOffset;

@@ -7,7 +7,9 @@
         Title="Settings - LogViewer2026" 
         Height="600" Width="700"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -26,8 +28,8 @@
                             <StackPanel Margin="10">
                                 <Label Content="Theme:"/>
                                 <ComboBox SelectedItem="{Binding Theme}" Margin="0,0,0,10">
-                                    <ComboBoxItem Content="Light"/>
-                                    <ComboBoxItem Content="Dark"/>
+                                    <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">Light</System:String>
+                                    <System:String xmlns:System="clr-namespace:System;assembly=mscorlib">Dark</System:String>
                                 </ComboBox>
 
                                 <Label Content="Max Recent Files:"/>
@@ -37,7 +39,7 @@
                                 <TextBox Text="{Binding LookingGlassContextLines}" Margin="0,0,0,5"/>
                                 <TextBlock Text="Number of lines to show before and after selected line in Log Looking Glass" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
 
@@ -46,7 +48,7 @@
                                           Margin="0,5,0,5"/>
                                 <TextBlock Text="Automatically update the looking glass when moving to a different line in the main editor" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
 
@@ -55,7 +57,7 @@
                                           Margin="0,5,0,5"/>
                                 <TextBlock Text="Show only lines matching the search text in the main editor" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
 
@@ -64,7 +66,7 @@
                                           Margin="0,5,0,5"/>
                                 <TextBlock Text="Show or hide the Looking Glass panel at the bottom of the window" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
                             </StackPanel>
@@ -100,7 +102,7 @@
                                          Margin="0,0,0,5"/>
                                 <TextBlock Text="Example: [{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] {Message:lj}" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
                             </StackPanel>
@@ -112,7 +114,7 @@
                                 <TextBox Text="{Binding PathFormat}" Margin="0,0,0,5"/>
                                 <TextBlock Text="Example: logs/log-.txt (where - is replaced with date)" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
 
@@ -127,7 +129,7 @@
                                 </ComboBox>
                                 <TextBlock Text="Determines how log files are rolled over" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,5,0,10"/>
                             </StackPanel>
@@ -140,7 +142,7 @@
                                           Margin="0,5,0,5"/>
                                 <TextBlock Text="When enabled, you can load entire folders or multiple files at once" 
                                            FontStyle="Italic" 
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
                             </StackPanel>
@@ -153,7 +155,7 @@
             <TabItem Header="About">
                 <StackPanel Margin="20">
                     <TextBlock Text="LogViewer2026" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
-                    <TextBlock Text="High-Performance Serilog Log Viewer" FontSize="14" Foreground="Gray" Margin="0,0,0,20"/>
+                    <TextBlock Text="High-Performance Serilog Log Viewer" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,20"/>
                     
                     <Separator Margin="0,0,0,20"/>
                     
@@ -166,13 +168,13 @@
                     <Label Content="Settings Location:" FontWeight="Bold"/>
                     <TextBox Text="{Binding SettingsPath, Mode=OneWay}" 
                              IsReadOnly="True" 
-                             Background="LightGray"
+                             Background="{DynamicResource ControlBackgroundBrush}"
                              TextWrapping="Wrap"
                              Margin="0,0,0,20"/>
                     
                     <TextBlock Text="© 2024 LogViewer2026. Built with WPF and .NET 10." 
                                FontStyle="Italic" 
-                               Foreground="Gray"
+                               Foreground="{DynamicResource SecondaryTextBrush}"
                                TextWrapping="Wrap"/>
                 </StackPanel>
             </TabItem>

@@ -4,6 +4,8 @@
         Title="Panel"
         Height="500" Width="900"
         WindowStartupLocation="CenterOwner"
-        ShowInTaskbar="True">
+        ShowInTaskbar="True"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
     <ContentControl x:Name="ContentHost"/>
 </Window>
