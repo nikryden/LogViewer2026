@@ -453,6 +453,32 @@ public partial class MainWindow : Window
         WpfApp.Current.Shutdown();
     }
 
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Allow dragging the window by clicking and dragging the title bar
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            this.DragMove();
+        }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = WindowState.Minimized;
+    }
+
+    private void Maximize_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = this.WindowState == WindowState.Maximized 
+            ? WindowState.Normal 
+            : WindowState.Maximized;
+    }
+
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        this.Close();
+    }
+
     private void Menu_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         // Allow dragging the window by clicking and dragging the menu bar
