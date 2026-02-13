@@ -11,12 +11,21 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
-        Background="{DynamicResource WindowBackgroundBrush}"
-        Foreground="{DynamicResource PrimaryTextBrush}"
-        BorderBrush="{DynamicResource BorderBrush}"
-        BorderThickness="1">
-    <Grid x:Name="MainGrid">
-        <Grid.RowDefinitions>
+        AllowsTransparency="True"
+        Background="Transparent">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      ResizeBorderThickness="5"
+                      GlassFrameThickness="0"
+                      CornerRadius="0"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Border Background="{DynamicResource WindowBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1">
+        <Grid x:Name="MainGrid">
+            <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -379,4 +388,5 @@
             </StatusBarItem>
         </StatusBar>
     </Grid>
+    </Border>
 </Window>
