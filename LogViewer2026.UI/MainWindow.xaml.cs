@@ -453,6 +453,15 @@ public partial class MainWindow : Window
         WpfApp.Current.Shutdown();
     }
 
+    private void Menu_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Allow dragging the window by clicking and dragging the menu bar
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            this.DragMove();
+        }
+    }
+
     private void AutoUpdateCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         // Save the setting when checkbox is toggled

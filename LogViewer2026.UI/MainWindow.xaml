@@ -9,8 +9,12 @@
         Title="LogViewer2026 - High-Performance Serilog Log Viewer" 
         Height="800" Width="1400"
         WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResizeWithGrip"
         Background="{DynamicResource WindowBackgroundBrush}"
-        Foreground="{DynamicResource PrimaryTextBrush}">
+        Foreground="{DynamicResource PrimaryTextBrush}"
+        BorderBrush="{DynamicResource BorderBrush}"
+        BorderThickness="1">
     <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -22,7 +26,10 @@
         </Grid.RowDefinitions>
 
         <!-- Menu Bar -->
-        <Menu Grid.Row="0" Background="{DynamicResource MenuBackgroundBrush}" Foreground="{DynamicResource PrimaryTextBrush}">
+        <Menu Grid.Row="0" 
+              Background="{DynamicResource MenuBackgroundBrush}" 
+              Foreground="{DynamicResource PrimaryTextBrush}"
+              MouseLeftButtonDown="Menu_MouseLeftButtonDown">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}"/>
                 <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}"/>
