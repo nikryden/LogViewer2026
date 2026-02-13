@@ -64,7 +64,7 @@
                             </Grid.ColumnDefinitions>
                             <!-- Icon column background -->
                             <Border Grid.Column="0" 
-                                   Background="{DynamicResource ControlBackgroundBrush}"
+                                   Background="#2B2B2E"
                                    Margin="0"/>
                             <ContentPresenter Name="Icon" 
                                             Grid.Column="0"
