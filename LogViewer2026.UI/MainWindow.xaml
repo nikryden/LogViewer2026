@@ -81,37 +81,101 @@
               Background="{DynamicResource MenuBackgroundBrush}" 
               Foreground="{DynamicResource PrimaryTextBrush}">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}"/>
-                <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}"/>
-                <MenuItem Header="Open _Folder..." Command="{Binding OpenFolderCommand}"/>
+                <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📂" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📁" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open _Folder..." Command="{Binding OpenFolderCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📂" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Settings..." Click="Settings_Click"/>
+                <MenuItem Header="_Settings..." Click="Settings_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⚙️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="E_xit" Click="Exit_Click"/>
+                <MenuItem Header="E_xit" Click="Exit_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🚪" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Copy" Command="{Binding CopyToClipboardCommand}"/>
+                <MenuItem Header="_Copy" Command="{Binding CopyToClipboardCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📋" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Filters">
-                <MenuItem Header="_Save Current Filter..." Command="{Binding SaveFilterCommand}"/>
-                <MenuItem Header="_Load Filter..." Command="{Binding LoadFilterCommand}"/>
-                <MenuItem Header="_Delete Filter..." Command="{Binding DeleteFilterCommand}"/>
+                <MenuItem Header="_Save Current Filter..." Command="{Binding SaveFilterCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="💾" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Load Filter..." Command="{Binding LoadFilterCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📥" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Delete Filter..." Command="{Binding DeleteFilterCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗑️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Export Filters..." Command="{Binding ExportFiltersCommand}"/>
-                <MenuItem Header="_Import Filters..." Command="{Binding ImportFiltersCommand}"/>
+                <MenuItem Header="_Export Filters..." Command="{Binding ExportFiltersCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📤" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Import Filters..." Command="{Binding ImportFiltersCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📥" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="_Filter Settings..." Click="OpenFilterWindow_Click" InputGestureText=""/>
+                <MenuItem Header="_Filter Settings..." Click="OpenFilterWindow_Click" InputGestureText="">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔧" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}"/>
+                <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔄" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem x:Name="UndockLogEditorMenuItem" Header="Undock _Log Editor" Click="ToggleLogEditorDock_Click"/>
-                <MenuItem x:Name="UndockLookingGlassMenuItem" Header="Undock Looking _Glass" Click="ToggleLookingGlassDock_Click"/>
+                <MenuItem x:Name="UndockLogEditorMenuItem" Header="Undock _Log Editor" Click="ToggleLogEditorDock_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⬜" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="UndockLookingGlassMenuItem" Header="Undock Looking _Glass" Click="ToggleLookingGlassDock_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔍" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Show Looking _Glass" 
                           IsCheckable="True"
                           IsChecked="{Binding ShowLookingGlass, Mode=TwoWay}"
-                          Click="ShowLookingGlass_Click"/>
+                          Click="ShowLookingGlass_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="👁️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
         </Menu>
 
