@@ -250,7 +250,7 @@
         </ToolBar>
 
         <!-- Log Editor Panel -->
-        <Grid x:Name="LogEditorPanel" Grid.Row="3" Margin="5">
+        <Grid x:Name="LogEditorPanel" Grid.Row="3" Margin="5,5,5,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -326,14 +326,14 @@
 
         <!-- Progress Bar (Visible when loading) -->
         <Grid Grid.Row="4" Background="{DynamicResource WindowBackgroundBrush}" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-            <StackPanel Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Margin="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding ProgressText}" 
                            FontWeight="SemiBold" 
                            HorizontalAlignment="Center" 
-                           Margin="0,0,0,10"
+                           Margin="0,0,0,0"
                            Visibility="{Binding ProgressText, Converter={StaticResource NullToVisibilityConverter}}"/>
                 <ProgressBar Width="400" 
-                             Height="20" 
+                             Height="10" 
                              Value="{Binding ProgressPercentage}" 
                              Minimum="0" 
                              Maximum="100"
@@ -349,7 +349,7 @@
         <!-- Looking Glass Panel -->
         <Grid x:Name="LogLookingGlasGroupBox" 
               Grid.Row="5"
-              Margin="5"
+              Margin="5,0,5,5"
               Visibility="{Binding ShowLookingGlass, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
