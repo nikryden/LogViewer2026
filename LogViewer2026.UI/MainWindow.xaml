@@ -255,12 +255,25 @@
                        Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <ComboBox x:Name="GoToFileComboBox"
                       ItemsSource="{Binding LoadedFileNames}"
-                      SelectedItem="{Binding SelectedGoToFile, Mode=TwoWay}"
+                      SelectedItem="{Binding SelectedDisplayFile, Mode=TwoWay}"
                       Width="200"
                       VerticalAlignment="Center"
                       Margin="5,0"
                       Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"
                       ToolTip="Navigate to the beginning of a loaded file"/>
+            <Button Command="{Binding GoToSelectedFileCommand}"
+                    Content="▶"
+                    Width="25"
+                    Margin="2,0"
+                    FontSize="11"
+                    ToolTip="Go to selected file (re-navigate)"
+                    Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <CheckBox Content="Show only"
+                      IsChecked="{Binding ShowSelectedFileOnly}"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      ToolTip="Show only the content of the selected file"
+                      Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </ToolBar>
 
         <!-- Log Editor Panel -->

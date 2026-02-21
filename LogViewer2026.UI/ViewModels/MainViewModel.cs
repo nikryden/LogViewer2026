@@ -90,18 +90,62 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private ObservableCollection<string> _loadedFileNames = [];
 
     [ObservableProperty]
-    private string? _selectedGoToFile;
+    private string? _selectedDisplayFile;
 
     [ObservableProperty]
     private bool _hasMultipleFiles;
 
+    [ObservableProperty]
+    private bool _showSelectedFileOnly;
+
+    private string? _activeFileText;
+
     public event Action<string>? OnGoToFileRequested;
 
-    partial void OnSelectedGoToFileChanged(string? value)
+    partial void OnSelectedDisplayFileChanged(string? value)
     {
         if (value == null) return;
         OnGoToFileRequested?.Invoke(value);
-        SelectedGoToFile = null;
+        if (ShowSelectedFileOnly)
+            UpdateFileFilter();
+    }
+
+    partial void OnShowSelectedFileOnlyChanged(bool value)
+    {
+        UpdateFileFilter();
+    }
+
+    [RelayCommand]
+    private void GoToSelectedFile()
+    {
+        if (!string.IsNullOrEmpty(SelectedDisplayFile))
+            OnGoToFileRequested?.Invoke(SelectedDisplayFile);
+    }
+
+    private void UpdateFileFilter()
+    {
+        _activeFileText = ShowSelectedFileOnly && !string.IsNullOrEmpty(SelectedDisplayFile)
+            ? ExtractFileContent(SelectedDisplayFile!)
+            : null;
+
+        if (FilterLevel != null || FilterStartTime.HasValue || FilterEndTime.HasValue)
+            _ = ApplyFilterAsync();
+        else if (FilterSearchResults && !string.IsNullOrEmpty(SearchText))
+            ApplySearchFilter();
+        else
+            LogText = _activeFileText ?? OriginalLogText;
+    }
+
+    private string ExtractFileContent(string fileName)
+    {
+        var header = $"=== File: {fileName} ===";
+        var text = OriginalLogText;
+        var startIdx = text.IndexOf(header, StringComparison.Ordinal);
+        if (startIdx < 0) return text;
+        var nextIdx = text.IndexOf("=== File:", startIdx + header.Length, StringComparison.Ordinal);
+        return nextIdx < 0
+            ? text[startIdx..].TrimEnd()
+            : text[startIdx..nextIdx].TrimEnd();
     }
 
     [ObservableProperty]
@@ -299,7 +343,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             // If no search text or filter disabled, restore filtered/original text based on level filter
             if (FilterLevel == null)
             {
-                LogText = OriginalLogText;
+                LogText = _activeFileText ?? OriginalLogText;
                 StatusText = $"Showing all {TotalLogCount:N0} lines";
             }
             // Note: Don't reapply level filter here to avoid recursion
@@ -308,7 +352,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
 
         // Single-pass: apply both level and search filters without Split/Join
-        var text = OriginalLogText;
+        var text = _activeFileText ?? OriginalLogText;
         var sb = new System.Text.StringBuilder();
         int filteredCount = 0;
         int lineStart = 0;
@@ -390,6 +434,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             LoadedFilesInfo = $"File: {Path.GetFileName(filePath)}";
             LoadedFileNames.Clear();
             HasMultipleFiles = false;
+            SelectedDisplayFile = null;
+            ShowSelectedFileOnly = false;
+            _activeFileText = null;
         }
         catch (Exception ex)
         {
@@ -468,7 +515,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             await Task.Run(() =>
             {
-                var text = OriginalLogText;
+                var text = _activeFileText ?? OriginalLogText;
                 var sb = new System.Text.StringBuilder();
                 int filteredCount = 0;
                 int lineStart = 0;
@@ -699,7 +746,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // Restore original text
         if (!string.IsNullOrEmpty(OriginalLogText))
         {
-            LogText = OriginalLogText;
+            LogText = _activeFileText ?? OriginalLogText;
             StatusText = $"Filters cleared - showing all {TotalLogCount:N0} lines";
 
             // Try to restore position to the same line with selection
@@ -831,6 +878,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             foreach (var f in _multiFileLogService!.GetLoadedFiles())
                 LoadedFileNames.Add(Path.GetFileName(f)!);
             HasMultipleFiles = LoadedFileNames.Count > 1;
+            SelectedDisplayFile = null;
+            ShowSelectedFileOnly = false;
+            _activeFileText = null;
         }
         catch (Exception ex)
         {
@@ -888,6 +938,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             foreach (var f in loadedFiles)
                 LoadedFileNames.Add(Path.GetFileName(f)!);
             HasMultipleFiles = LoadedFileNames.Count > 1;
+            SelectedDisplayFile = null;
+            ShowSelectedFileOnly = false;
+            _activeFileText = null;
         }
         catch (Exception ex)
         {
