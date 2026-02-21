@@ -87,6 +87,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private string _loadedFilesInfo = string.Empty;
 
     [ObservableProperty]
+    private ObservableCollection<string> _loadedFileNames = [];
+
+    [ObservableProperty]
+    private string? _selectedGoToFile;
+
+    [ObservableProperty]
+    private bool _hasMultipleFiles;
+
+    public event Action<string>? OnGoToFileRequested;
+
+    partial void OnSelectedGoToFileChanged(string? value)
+    {
+        if (value == null) return;
+        OnGoToFileRequested?.Invoke(value);
+        SelectedGoToFile = null;
+    }
+
+    [ObservableProperty]
     private LookingGlassData _selectedLookingGlas = new LookingGlassData();
 
     [ObservableProperty]
@@ -370,6 +388,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
             StatusText = $"Loaded {Path.GetFileName(filePath)} - {TotalLogCount:N0} lines ({fileText.Length:N0} characters)";
             LoadedFilesInfo = $"File: {Path.GetFileName(filePath)}";
+            LoadedFileNames.Clear();
+            HasMultipleFiles = false;
         }
         catch (Exception ex)
         {
@@ -806,6 +826,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             var fileNames = string.Join(", ", filePaths.Select(Path.GetFileName));
             StatusText = $"Loaded {filePaths.Length} files - {TotalLogCount:N0} total lines";
             LoadedFilesInfo = $"Files: {fileNames}";
+
+            LoadedFileNames.Clear();
+            foreach (var f in _multiFileLogService!.GetLoadedFiles())
+                LoadedFileNames.Add(Path.GetFileName(f)!);
+            HasMultipleFiles = LoadedFileNames.Count > 1;
         }
         catch (Exception ex)
         {
@@ -858,6 +883,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             var loadedFiles = _multiFileLogService.GetLoadedFiles();
             LoadedFilesInfo = $"{loadedFiles.Count} files from folder";
             StatusText = $"Loaded {TotalLogCount:N0} lines from {loadedFiles.Count} files in folder";
+
+            LoadedFileNames.Clear();
+            foreach (var f in loadedFiles)
+                LoadedFileNames.Add(Path.GetFileName(f)!);
+            HasMultipleFiles = LoadedFileNames.Count > 1;
         }
         catch (Exception ex)
         {

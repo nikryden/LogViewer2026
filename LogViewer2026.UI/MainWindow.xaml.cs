@@ -127,6 +127,9 @@ public partial class MainWindow : Window
         // Handle manual looking glass update
         _viewModel.OnUpdateLookingGlassRequested += UpdateLookingGlass;
 
+        // Handle go-to-file navigation
+        _viewModel.OnGoToFileRequested += GoToFileHeader;
+
         // Keyboard shortcuts
         var findNextGesture = new KeyGesture(Key.F3);
         var findPreviousGesture = new KeyGesture(Key.F3, ModifierKeys.Shift);
@@ -738,6 +741,7 @@ public partial class MainWindow : Window
         _viewModel.OnSelectWholeLineRequested -= SelectWholeLine;
         _viewModel.OnSelectAllRequested -= SelectAll;
         _viewModel.OnUpdateLookingGlassRequested -= UpdateLookingGlass;
+        _viewModel.OnGoToFileRequested -= GoToFileHeader;
 
         if (DataContext is IDisposable disposable)
         {
@@ -752,6 +756,22 @@ public partial class MainWindow : Window
             Owner = this
         };
         filterWindow.ShowDialog();
+    }
+
+    private void GoToFileHeader(string fileName)
+    {
+        if (LogEditor.Document == null) return;
+
+        Dispatcher.Invoke(() =>
+        {
+            var header = $"=== File: {fileName} ===";
+            var index = LogEditor.Text.IndexOf(header, StringComparison.Ordinal);
+            if (index < 0) return;
+
+            var location = LogEditor.Document.GetLocation(index);
+            LogEditor.CaretOffset = index;
+            LogEditor.ScrollTo(location.Line, 0);
+        });
     }
 
     private void ClearSearch_Click(object sender, RoutedEventArgs e)

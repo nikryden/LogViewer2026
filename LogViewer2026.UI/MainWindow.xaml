@@ -247,6 +247,20 @@
                     Content="Clear Filters" 
                     Margin="5,0"
                     ToolTip="Clear all active filters"/>
+
+            <Separator Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <TextBlock Text="Go to file:" 
+                       VerticalAlignment="Center" 
+                       Margin="5,0"
+                       Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <ComboBox x:Name="GoToFileComboBox"
+                      ItemsSource="{Binding LoadedFileNames}"
+                      SelectedItem="{Binding SelectedGoToFile, Mode=TwoWay}"
+                      Width="200"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"
+                      ToolTip="Navigate to the beginning of a loaded file"/>
         </ToolBar>
 
         <!-- Log Editor Panel -->
