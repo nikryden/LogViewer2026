@@ -30,7 +30,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -184,7 +184,7 @@
             <Button Command="{Binding OpenFileCommand}" ToolTip="Open Log File">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="📂" FontSize="16" Margin="0,0,5,0"/>
-                    <TextBlock Text="Open"/>
+                    <TextBlock Text="Open" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
            
@@ -239,7 +239,7 @@
                     Margin="5,0">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="🔧" FontSize="16" Margin="0,0,5,0"/>
-                    <TextBlock Text="Filters"/>
+                    <TextBlock Text="Filters" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
 
@@ -252,12 +252,10 @@
         <!-- Log Editor Panel -->
         <Grid x:Name="LogEditorPanel" 
               Grid.Row="3" 
-              Margin="5,5,5,0"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch">
+              Margin="5">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="*" MinHeight="0"/>
             </Grid.RowDefinitions>
             <DockPanel Grid.Row="0" LastChildFill="False" Background="{DynamicResource ControlBackgroundBrush}">
                 <TextBlock Text="📝 Log content " FontWeight="SemiBold" VerticalAlignment="Center" Margin="5,3"/>
@@ -272,8 +270,6 @@
                                IsReadOnly="True"
                                ShowLineNumbers="True"
                                WordWrap="False"
-                               HorizontalAlignment="Stretch"
-                               VerticalAlignment="Stretch"
                                HorizontalScrollBarVisibility="Auto"
                                VerticalScrollBarVisibility="Auto"
                                Background="{DynamicResource EditorBackgroundBrush}"
@@ -329,7 +325,7 @@
                       Background="{DynamicResource BorderBrush}"/>
 
         <!-- Progress Bar (Visible when loading) -->
-        <Grid Grid.Row="4" Background="{DynamicResource WindowBackgroundBrush}" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+        <Grid Grid.Row="3" Grid.RowSpan="3" Background="{DynamicResource WindowBackgroundBrush}" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="999">
             <StackPanel Margin="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding ProgressText}" 
                            FontWeight="SemiBold" 
@@ -353,13 +349,12 @@
         <!-- Looking Glass Panel -->
         <Grid x:Name="LogLookingGlasGroupBox" 
               Grid.Row="5"
-              Margin="5,0,5,5"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Stretch"
+              Margin="5"
+              
               Visibility="{Binding ShowLookingGlass, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="*" MinHeight="0"/>
             </Grid.RowDefinitions>
             <DockPanel Grid.Row="0" LastChildFill="False" Background="{DynamicResource ControlBackgroundBrush}">
                 <TextBlock Text="🔍 Looking glass" FontWeight="SemiBold" VerticalAlignment="Center" Margin="5,3"/>
@@ -386,8 +381,6 @@
                                IsReadOnly="True"
                                ShowLineNumbers="True"
                                WordWrap="False"
-                               HorizontalAlignment="Stretch"
-                               VerticalAlignment="Stretch"
                                HorizontalScrollBarVisibility="Auto"
                                VerticalScrollBarVisibility="Auto"
                                Background="{DynamicResource EditorBackgroundBrush}"

@@ -577,14 +577,13 @@ public partial class MainWindow : Window
         if (_lookingGlassFloatingWindow != null)
             return;
 
-        if (_viewModel.ShowLookingGlass)
-        {
-            MainGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
-        }
-        else
-        {
-            MainGrid.RowDefinitions[4].Height = new GridLength(0);
-        }
+        // Row 4 is the GridSplitter — always keep it Auto so it sizes to the splitter control itself
+        MainGrid.RowDefinitions[4].Height = GridLength.Auto;
+
+        // Row 5 is the Looking Glass panel
+        MainGrid.RowDefinitions[5].Height = _viewModel.ShowLookingGlass
+            ? new GridLength(1, GridUnitType.Star)
+            : new GridLength(0);
     }
 
     private void ToggleLogEditorDock_Click(object sender, RoutedEventArgs e)
@@ -598,7 +597,7 @@ public partial class MainWindow : Window
     private void UndockLogEditor()
     {
         MainGrid.Children.Remove(LogEditorPanel);
-        MainGrid.RowDefinitions[2].Height = new GridLength(0);
+        MainGrid.RowDefinitions[3].Height = new GridLength(0);
 
         _logEditorFloatingWindow = new FloatingPanelWindow
         {
@@ -628,9 +627,9 @@ public partial class MainWindow : Window
         _logEditorFloatingWindow.ForceClose();
         _logEditorFloatingWindow = null;
 
-        Grid.SetRow(LogEditorPanel, 2);
+        Grid.SetRow(LogEditorPanel, 3);
         MainGrid.Children.Add(LogEditorPanel);
-        MainGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
+        MainGrid.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
 
         LogEditorDockButton.Content = "⬜ Undock";
         LogEditorDockButton.ToolTip = "Undock Log Editor to a separate window";
@@ -650,7 +649,7 @@ public partial class MainWindow : Window
     private void UndockLookingGlass()
     {
         MainGrid.Children.Remove(LogLookingGlasGroupBox);
-        MainGrid.RowDefinitions[4].Height = new GridLength(0);
+        MainGrid.RowDefinitions[5].Height = new GridLength(0);
 
         // Clear the visibility binding so the panel is always visible in the floating window
         LogLookingGlasGroupBox.ClearValue(VisibilityProperty);
@@ -691,7 +690,7 @@ public partial class MainWindow : Window
         };
         LogLookingGlasGroupBox.SetBinding(VisibilityProperty, binding);
 
-        Grid.SetRow(LogLookingGlasGroupBox, 4);
+        Grid.SetRow(LogLookingGlasGroupBox, 5);
         MainGrid.Children.Add(LogLookingGlasGroupBox);
         UpdateLookingGlassRowHeight();
 
