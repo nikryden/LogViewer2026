@@ -1222,7 +1222,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
             SelectedLookingGlas.Text = sb.ToString();
             SelectedLookingGlas.HighlightStartOffset = newHighlightStartOffset;
-            SelectedLookingGlas.HighlightLength = selectedLength;
+            // Clamp the highlight length to the actual text available in the Looking Glass
+            SelectedLookingGlas.HighlightLength = Math.Min(selectedLength, 
+                Math.Max(0, sb.Length - newHighlightStartOffset));
             SelectedLookingGlas.StartingLineNumber = startLine;
             return;
         }
@@ -1249,7 +1251,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         SelectedLookingGlas.Text = originalContextText.ToString();
         SelectedLookingGlas.HighlightStartOffset = highlightOffset;
-        SelectedLookingGlas.HighlightLength = selectedLength;
+        // Clamp the highlight length to the actual text available in the Looking Glass
+        // (don't let a multi-line selection extend beyond the context window)
+        SelectedLookingGlas.HighlightLength = Math.Min(selectedLength, 
+            Math.Max(0, originalContextText.Length - highlightOffset));
         SelectedLookingGlas.StartingLineNumber = originalStartLine + 1; // Line numbers are 1-based
     }
 
