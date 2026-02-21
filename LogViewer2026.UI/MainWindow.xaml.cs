@@ -281,7 +281,11 @@ public partial class MainWindow : Window
         if (LogEditor.Document == null || string.IsNullOrEmpty(_viewModel.OriginalLogText))
             return;
 
-        var line = LogEditor.Document.GetLineByOffset(LogEditor.CaretOffset);
+        // Use the selection-start line (not the caret line) so that multi-line
+        // selections are anchored at the first selected row in the Looking Glass.
+        // For a zero-length selection, SelectionStart == CaretOffset, so
+        // single-line behaviour is unchanged.
+        var line = LogEditor.Document.GetLineByOffset(LogEditor.SelectionStart);
         var lineNumber = line.LineNumber;
         var selectedLength = LogEditor.SelectionLength;
 
