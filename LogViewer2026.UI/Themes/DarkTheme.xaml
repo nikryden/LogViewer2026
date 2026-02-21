@@ -376,6 +376,14 @@
         </Setter>
     </Style>
 
+    <!-- ToolBar keyed styles – WPF calls SetResourceReference(StyleProperty, ToolBar.ComboBoxStyleKey)
+         inside PrepareContainerForItemOverride, so without these entries WPF falls back to the
+         Aero/Modern theme's versions which use SystemColors (light-blue selection, etc.). -->
+    <Style x:Key="{x:Static ToolBar.ComboBoxStyleKey}"  TargetType="{x:Type ComboBox}"
+           BasedOn="{StaticResource {x:Type ComboBox}}"/>
+    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}"   TargetType="{x:Type TextBox}"
+           BasedOn="{StaticResource {x:Type TextBox}}"/>
+
     <!-- ListBox -->
     <Style TargetType="{x:Type ListBox}">
         <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>

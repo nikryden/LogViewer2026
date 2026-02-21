@@ -360,6 +360,12 @@
         </Setter>
     </Style>
 
+    <!-- ToolBar keyed styles – same reason as DarkTheme -->
+    <Style x:Key="{x:Static ToolBar.ComboBoxStyleKey}"  TargetType="{x:Type ComboBox}"
+           BasedOn="{StaticResource {x:Type ComboBox}}"/>
+    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}"   TargetType="{x:Type TextBox}"
+           BasedOn="{StaticResource {x:Type TextBox}}"/>
+
     <!-- ListBox -->
     <Style TargetType="{x:Type ListBox}">
         <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}"/>
