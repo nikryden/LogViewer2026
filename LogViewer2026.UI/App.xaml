@@ -4,11 +4,19 @@
              xmlns:local="clr-namespace:LogViewer2026.UI"
              xmlns:converters="clr-namespace:LogViewer2026.UI.Converters">
     <Application.Resources>
-        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-        <converters:LogLevelToStringConverter x:Key="LogLevelToStringConverter"/>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <converters:IsZeroConverter x:Key="IsZeroConverter"/>
-        <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
-        <converters:PlusOneConverter x:Key="PlusOneConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Default theme (will be replaced on startup) -->
+                <ResourceDictionary Source="Themes/LightTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Converters -->
+            <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <converters:LogLevelToStringConverter x:Key="LogLevelToStringConverter"/>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+            <converters:IsZeroConverter x:Key="IsZeroConverter"/>
+            <converters:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter"/>
+            <converters:PlusOneConverter x:Key="PlusOneConverter"/>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

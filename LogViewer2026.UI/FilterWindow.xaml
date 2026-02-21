@@ -1,0 +1,231 @@
+<Window x:Class="LogViewer2026.UI.FilterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LogViewer2026.UI"
+        mc:Ignorable="d"
+        Title="Filter Settings - LogViewer2026" 
+        Height="600" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="CanResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="🔧 Filter Settings" 
+                   FontSize="20" 
+                   FontWeight="SemiBold" 
+                   Margin="0,0,0,15"/>
+
+        <!-- Filter Settings -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Log Level Filter -->
+                <GroupBox Header="Log Level" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Filter by log level:" Margin="0,0,0,5"/>
+                        <ComboBox ItemsSource="{Binding AvailableLogLevels}"
+                                  SelectedItem="{Binding SelectedLogLevelOption, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName"
+                                  Margin="0,0,0,10"/>
+                        <TextBlock Text="Show only log entries matching the selected level (click Apply to activate)" 
+                                   FontSize="11" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Date/Time Range Filter -->
+                <GroupBox Header="Date/Time Range" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Filter logs by date and time range:" 
+                                   Margin="0,0,0,10" 
+                                   TextWrapping="Wrap"/>
+                        
+                        <!-- From Date/Time -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="From:" 
+                                       Width="50" 
+                                       VerticalAlignment="Center"/>
+                            <DatePicker x:Name="FilterStartDatePicker"
+                                        SelectedDate="{Binding FilterStartTime, Mode=TwoWay}"
+                                        Width="130"
+                                        Margin="5,0"
+                                        ToolTip="Start date"
+                                        SelectedDateChanged="FilterStartDatePicker_SelectedDateChanged"/>
+                            <TextBox x:Name="FilterStartTimeBox"
+                                     Width="80"
+                                     Margin="5,0"
+                                     ToolTip="Time (HH:mm or HH:mm:ss)"
+                                     TextChanged="FilterStartTimeBox_TextChanged"
+                                     Text="00:00"/>
+                            <Button Click="ClearStartDateTime_Click"
+                                    Content="✖"
+                                    ToolTip="Clear From Date/Time"
+                                    Width="25"
+                                    Height="25"
+                                    Margin="5,0"
+                                    FontSize="12"
+                                    Padding="0"/>
+                        </StackPanel>
+
+                        <!-- To Date/Time -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="To:" 
+                                       Width="50" 
+                                       VerticalAlignment="Center"/>
+                            <DatePicker x:Name="FilterEndDatePicker"
+                                        SelectedDate="{Binding FilterEndTime, Mode=TwoWay}"
+                                        Width="130"
+                                        Margin="5,0"
+                                        ToolTip="End date"
+                                        SelectedDateChanged="FilterEndDatePicker_SelectedDateChanged"/>
+                            <TextBox x:Name="FilterEndTimeBox"
+                                     Width="80"
+                                     Margin="5,0"
+                                     ToolTip="Time (HH:mm or HH:mm:ss)"
+                                     TextChanged="FilterEndTimeBox_TextChanged"
+                                     Text="23:59"/>
+                            <Button Click="ClearEndDateTime_Click"
+                                    Content="✖"
+                                    ToolTip="Clear To Date/Time"
+                                    Width="25"
+                                    Height="25"
+                                    Margin="5,0"
+                                    FontSize="12"
+                                    Padding="0"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Leave empty for no date/time restrictions" 
+                                   FontSize="11" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Search Filter Option -->
+                <GroupBox Header="Search Filter Options" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <CheckBox Content="Filter search results" 
+                                  IsChecked="{Binding FilterSearchResults}"
+                                  Margin="0,0,0,10"
+                                  ToolTip="Show only lines matching the search text"
+                                  Checked="FilterSearchCheckBox_Changed"
+                                  Unchecked="FilterSearchCheckBox_Changed"/>
+                        <TextBlock Text="When enabled, only lines containing the search text will be displayed" 
+                                   FontSize="11" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}" 
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Saved Filters -->
+                <GroupBox Header="Saved Filters" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Manage filter configurations:" Margin="0,0,0,10"/>
+                        
+                        <ComboBox ItemsSource="{Binding SavedFilters}"
+                                  SelectedItem="{Binding SelectedFilter}"
+                                  DisplayMemberPath="Name"
+                                  Margin="0,0,0,10"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Button Grid.Column="0" 
+                                    Command="{Binding LoadFilterCommand}" 
+                                    Content="Load" 
+                                    Margin="0,0,5,0"/>
+                            <Button Grid.Column="1" 
+                                    Command="{Binding SaveFilterCommand}" 
+                                    Content="Save" 
+                                    Margin="5,0"/>
+                            <Button Grid.Column="2" 
+                                    Command="{Binding DeleteFilterCommand}" 
+                                    Content="Delete" 
+                                    Margin="5,0,0,0"/>
+                        </Grid>
+                        
+                        <Separator Margin="0,15"/>
+                        
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <Button Grid.Column="0" 
+                                    Command="{Binding ExportFiltersCommand}" 
+                                    Content="📤 Export" 
+                                    Margin="0,0,5,0"
+                                    ToolTip="Export filters to file"/>
+                            <Button Grid.Column="1" 
+                                    Command="{Binding ImportFiltersCommand}" 
+                                    Content="📥 Import" 
+                                    Margin="5,0,0,0"
+                                    ToolTip="Import filters from file"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Action Buttons -->
+        <Grid Grid.Row="2" Margin="0,15,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Info Text -->
+            <TextBlock Grid.Row="0" 
+                       Text="💡 Click Apply to activate filters" 
+                       FontSize="11" 
+                       Foreground="{DynamicResource PrimaryTextBrush}" 
+                       Margin="0,0,0,10"
+                       HorizontalAlignment="Center"/>
+
+            <!-- Buttons -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" 
+                        Command="{Binding ClearFiltersCommand}" 
+                        Content="Clear All Filters" 
+                        Padding="10,5"
+                        HorizontalAlignment="Left"/>
+
+                <Button Grid.Column="1" 
+                        Content="✓ Apply Filters" 
+                        IsDefault="True"
+                        Padding="20,5"
+                        Margin="5,0"
+                        FontWeight="SemiBold"
+                        Click="Apply_Click"/>
+
+                <Button Grid.Column="2" 
+                        Content="Close" 
+                        IsCancel="True"
+                        Padding="20,5"
+                        Click="Close_Click"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

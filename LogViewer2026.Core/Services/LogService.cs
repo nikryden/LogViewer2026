@@ -15,11 +15,16 @@ public sealed class LogService : ILogService
     {
         System.Diagnostics.Debug.WriteLine($"LogService: Reading entire file '{filePath}'...");
 
-        // Simple! Just read all text
-        var text = await Task.Run(() => File.ReadAllText(filePath));
+        // Read with FileShare to allow opening files that are being written to by other processes
+        var text = await Task.Run(() =>
+        {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        });
 
         // Report line count
-        var lineCount = text.Split('\n').Length;
+        var lineCount = GetTotalLineCount(text);
         progress?.Report(lineCount);
 
         System.Diagnostics.Debug.WriteLine($"LogService: Read {text.Length:N0} characters, {lineCount:N0} lines");
@@ -32,7 +37,13 @@ public sealed class LogService : ILogService
         if (string.IsNullOrEmpty(text))
             return 0;
 
-        return text.Split('\n').Length;
+        int count = 1;
+        foreach (var c in text.AsSpan())
+        {
+            if (c == '\n')
+                count++;
+        }
+        return count;
     }
 
     public void Dispose()

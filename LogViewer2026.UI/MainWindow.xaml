@@ -8,55 +8,183 @@
         mc:Ignorable="d"
         Title="LogViewer2026 - High-Performance Serilog Log Viewer" 
         Height="800" Width="1400"
-        WindowStartupLocation="CenterScreen">
-    <Grid>
-        <Grid.RowDefinitions>
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResizeWithGrip"
+        AllowsTransparency="True"
+        Background="Transparent">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      ResizeBorderThickness="5"
+                      GlassFrameThickness="0"
+                      CornerRadius="0"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Border Background="{DynamicResource WindowBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1">
+        <Grid x:Name="MainGrid">
+            <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- Custom Title Bar -->
+        <DockPanel Grid.Row="0" 
+                   Background="{DynamicResource MenuBackgroundBrush}"
+                   MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                   Height="30">
+            <!-- Window Control Buttons -->
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="0,0,5,0">
+                <Button Content="🗕" 
+                        Click="Minimize_Click"
+                        Width="45" Height="30"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Foreground="{DynamicResource PrimaryTextBrush}"
+                        ToolTip="Minimize"
+                        FontSize="14"/>
+                <Button Content="🗖" 
+                        Click="Maximize_Click"
+                        Width="45" Height="30"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Foreground="{DynamicResource PrimaryTextBrush}"
+                        ToolTip="Maximize"
+                        FontSize="14"/>
+                <Button Content="✖" 
+                        Click="Close_Click"
+                        Width="45" Height="30"
+                        BorderThickness="0"
+                        Background="Transparent"
+                        Foreground="{DynamicResource PrimaryTextBrush}"
+                        ToolTip="Close"
+                        FontSize="14"/>
+            </StackPanel>
+
+            <!-- Title -->
+            <TextBlock Text="LogViewer2026 - High-Performance Serilog Log Viewer"
+                       VerticalAlignment="Center"
+                       Margin="10,0"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
+                       FontSize="12"/>
+        </DockPanel>
+
         <!-- Menu Bar -->
-        <Menu Grid.Row="0">
+        <Menu Grid.Row="1" 
+              Background="{DynamicResource MenuBackgroundBrush}" 
+              Foreground="{DynamicResource PrimaryTextBrush}">
             <MenuItem Header="_File">
-                <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}"/>
-                <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}"/>
-                <MenuItem Header="Open _Folder..." Command="{Binding OpenFolderCommand}"/>
+                <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📂" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📁" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open _Folder..." Command="{Binding OpenFolderCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📂" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Settings..." Click="Settings_Click"/>
+                <MenuItem Header="_Settings..." Click="Settings_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⚙️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="E_xit" Click="Exit_Click"/>
+                <MenuItem Header="E_xit" Click="Exit_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🚪" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Edit">
-                <MenuItem Header="_Copy" Command="{Binding CopyToClipboardCommand}"/>
+                <MenuItem Header="_Copy" Command="{Binding CopyToClipboardCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📋" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Filters">
-                <MenuItem Header="_Save Current Filter..." Command="{Binding SaveFilterCommand}"/>
-                <MenuItem Header="_Load Filter..." Command="{Binding LoadFilterCommand}"/>
-                <MenuItem Header="_Delete Filter..." Command="{Binding DeleteFilterCommand}"/>
+                <MenuItem Header="_Save Current Filter..." Command="{Binding SaveFilterCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="💾" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Load Filter..." Command="{Binding LoadFilterCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📥" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Delete Filter..." Command="{Binding DeleteFilterCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗑️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Export Filters..." Command="{Binding ExportFiltersCommand}"/>
-                <MenuItem Header="_Import Filters..." Command="{Binding ImportFiltersCommand}"/>
+                <MenuItem Header="_Export Filters..." Command="{Binding ExportFiltersCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📤" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Import Filters..." Command="{Binding ImportFiltersCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📥" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}"/>
+                <MenuItem Header="_Filter Settings..." Click="OpenFilterWindow_Click" InputGestureText="">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔧" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔄" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem x:Name="UndockLogEditorMenuItem" Header="Undock _Log Editor" Click="ToggleLogEditorDock_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⬜" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="UndockLookingGlassMenuItem" Header="Undock Looking _Glass" Click="ToggleLookingGlassDock_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔍" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Show Looking _Glass" 
                           IsCheckable="True"
                           IsChecked="{Binding ShowLookingGlass, Mode=TwoWay}"
-                          Click="ShowLookingGlass_Click"/>
+                          Click="ShowLookingGlass_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="👁️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
         </Menu>
 
         <!-- Toolbar -->
-        <ToolBar Grid.Row="1" ToolBarTray.IsLocked="True">
+        <ToolBar Grid.Row="2" ToolBarTray.IsLocked="True">
             <Button Command="{Binding OpenFileCommand}" ToolTip="Open Log File">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="📂" FontSize="16" Margin="0,0,5,0"/>
-                    <TextBlock Text="Open"/>
+                    <TextBlock Text="Open" VerticalAlignment="Center"/>
                 </StackPanel>
             </Button>
            
@@ -67,9 +195,17 @@
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                      VerticalAlignment="Center" 
                      Margin="5,0"
-                     x:Name="SearchBox"/>
-            <Button Command="{Binding SearchCommand}" Content="🔍 Search" Margin="5,0"/>
-            <Button Command="{Binding FindPreviousCommand}" 
+                     x:Name="SearchBox"
+                     Foreground="{DynamicResource PrimaryTextBrush}"
+                     Background="{DynamicResource ControlBackgroundBrush}"
+                     CaretBrush="{DynamicResource PrimaryTextBrush}"/>
+            <Button Click="ClearSearch_Click" 
+                    Content="✖" 
+                    ToolTip="Clear Search"
+                    Width="25"
+                    Margin="2,0"
+                    FontSize="14"/>
+            <Button Command="{Binding FindPreviousCommand}"
                     Content="⬆️" 
                     ToolTip="Previous Result (Shift+F3)"
                     Width="30"
@@ -97,95 +233,107 @@
                       Unchecked="FilterSearchCheckBox_Changed"/>
             <Separator/>
 
-            <TextBlock Text="Level:" VerticalAlignment="Center" Margin="5,0"/>
-            <ComboBox Width="100" 
-                      ItemsSource="{Binding AvailableLogLevels}"
-                      SelectedItem="{Binding SelectedLogLevelOption, Mode=TwoWay}"
-                      DisplayMemberPath="DisplayName"
-                      VerticalAlignment="Center" Margin="5,0"/>
+            <Button Click="OpenFilterWindow_Click" 
+                    ToolTip="Open Filter Settings Window"
+                    Padding="10,5"
+                    Margin="5,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🔧" FontSize="16" Margin="0,0,5,0"/>
+                    <TextBlock Text="Filters" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
 
-            <Button Command="{Binding ClearFiltersCommand}" Content="Clear Filters" Margin="5,0"/>
-            <Separator/>
-
-            <TextBlock Text="Saved Filters:" VerticalAlignment="Center" Margin="5,0"/>
-            <ComboBox Width="150" 
-                      ItemsSource="{Binding SavedFilters}"
-                      SelectedItem="{Binding SelectedFilter}"
-                      DisplayMemberPath="Name"
-                      VerticalAlignment="Center" Margin="5,0"/>
-            <Button Command="{Binding LoadFilterCommand}" Content="Load" Margin="5,0"/>
+            <Button Command="{Binding ClearFiltersCommand}" 
+                    Content="Clear Filters" 
+                    Margin="5,0"
+                    ToolTip="Clear all active filters"/>
         </ToolBar>
 
-        <!-- AvalonEdit Log Viewer -->
-        <avalon:TextEditor Grid.Row="2"
-                           x:Name="LogEditor"
-                           FontFamily="Consolas"
-                           FontSize="12"
-                           IsReadOnly="True"
-                           ShowLineNumbers="True"
-                           WordWrap="False"
-                           HorizontalScrollBarVisibility="Auto"
-                           VerticalScrollBarVisibility="Auto"
-                           Margin="5"
-                           ContextMenuOpening="LogEditor_ContextMenuOpening">
-            <avalon:TextEditor.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Copy" 
-                              Command="{Binding CopyToClipboardCommand}"
-                              InputGestureText="Ctrl+C">
-                        <MenuItem.Icon>
-                            <TextBlock Text="📋" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Copy to Search" 
-                              Command="{Binding CopyToSearchCommand}">
-                        <MenuItem.Icon>
-                            <TextBlock Text="🔍" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <Separator/>
-                    <MenuItem Header="Select Whole Line" 
-                              Command="{Binding SelectWholeLineCommand}"
-                              InputGestureText="Ctrl+L">
-                        <MenuItem.Icon>
-                            <TextBlock Text="📄" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Select All" 
-                              Command="{Binding SelectAllCommand}"
-                              InputGestureText="Ctrl+A">
-                        <MenuItem.Icon>
-                            <TextBlock Text="📑" FontSize="14"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                </ContextMenu>
-            </avalon:TextEditor.ContextMenu>
-            <avalon:TextEditor.Options>
-                <avalon:TextEditorOptions ShowSpaces="False"
-                                          ShowTabs="False"
-                                          ShowEndOfLine="False"
-                                          ShowBoxForControlCharacters="False"
-                                          EnableHyperlinks="True"
-                                          EnableEmailHyperlinks="True"/>
-            </avalon:TextEditor.Options>
-        </avalon:TextEditor>
+        <!-- Log Editor Panel -->
+        <Grid x:Name="LogEditorPanel" 
+              Grid.Row="3" 
+              Margin="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="0"/>
+            </Grid.RowDefinitions>
+            <DockPanel Grid.Row="0" LastChildFill="False" Background="{DynamicResource ControlBackgroundBrush}">
+                <TextBlock Text="📝 Log content " FontWeight="SemiBold" VerticalAlignment="Center" Margin="5,3"/>
+                <Button x:Name="LogEditorDockButton" DockPanel.Dock="Right" Content="⬜ Undock"
+                        Click="ToggleLogEditorDock_Click" Padding="8,2" Margin="2" FontSize="11"
+                        ToolTip="Undock Log Editor to a separate window"/>
+            </DockPanel>
+            <avalon:TextEditor Grid.Row="1"
+                               x:Name="LogEditor"
+                               FontFamily="Consolas"
+                               FontSize="12"
+                               IsReadOnly="True"
+                               ShowLineNumbers="True"
+                               WordWrap="False"
+                               HorizontalScrollBarVisibility="Auto"
+                               VerticalScrollBarVisibility="Auto"
+                               Background="{DynamicResource EditorBackgroundBrush}"
+                               Foreground="{DynamicResource EditorForegroundBrush}"
+                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
+                               ContextMenuOpening="LogEditor_ContextMenuOpening">
+                <avalon:TextEditor.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Copy" 
+                                  Command="{Binding CopyToClipboardCommand}"
+                                  InputGestureText="Ctrl+C">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📋" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Copy to Search" 
+                                  Command="{Binding CopyToSearchCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🔍" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Select Whole Line" 
+                                  Command="{Binding SelectWholeLineCommand}"
+                                  InputGestureText="Ctrl+L">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📄" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Select All" 
+                                  Command="{Binding SelectAllCommand}"
+                                  InputGestureText="Ctrl+A">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📑" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </avalon:TextEditor.ContextMenu>
+                <avalon:TextEditor.Options>
+                    <avalon:TextEditorOptions ShowSpaces="False"
+                                              ShowTabs="False"
+                                              ShowEndOfLine="False"
+                                              ShowBoxForControlCharacters="False"
+                                              EnableHyperlinks="True"
+                                              EnableEmailHyperlinks="True"/>
+                </avalon:TextEditor.Options>
+            </avalon:TextEditor>
+        </Grid>
 
-        <GridSplitter Grid.Row="3" 
+        <GridSplitter x:Name="PanelSplitter" Grid.Row="4"
                       Height="5" 
                       HorizontalAlignment="Stretch" 
-                      Background="LightGray"
-                      Visibility="{Binding ShowLookingGlass, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                      Background="{DynamicResource BorderBrush}"/>
 
         <!-- Progress Bar (Visible when loading) -->
-        <Grid Grid.Row="3" Background="White" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-            <StackPanel Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Grid Grid.Row="3" Grid.RowSpan="3" Background="{DynamicResource WindowBackgroundBrush}" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" Panel.ZIndex="999">
+            <StackPanel Margin="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding ProgressText}" 
                            FontWeight="SemiBold" 
                            HorizontalAlignment="Center" 
-                           Margin="0,0,0,10"
+                           Margin="0,0,0,0"
                            Visibility="{Binding ProgressText, Converter={StaticResource NullToVisibilityConverter}}"/>
                 <ProgressBar Width="400" 
-                             Height="20" 
+                             Height="10" 
                              Value="{Binding ProgressPercentage}" 
                              Minimum="0" 
                              Maximum="100"
@@ -194,38 +342,50 @@
                            HorizontalAlignment="Center" 
                            Margin="0,5,0,0"
                            FontSize="12"
-                           Foreground="Gray"/>
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
             </StackPanel>
         </Grid>
 
-        <!-- Details Panel -->
-        <GroupBox x:Name="LogLookingGlasGroupBox" 
-                  Grid.Row="4" 
-                  Margin="5"
-                  Visibility="{Binding ShowLookingGlass, Converter={StaticResource BoolToVisibilityConverter}}">
-            <GroupBox.Header>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Looking glass" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <Button Command="{Binding UpdateLookingGlassViewCommand}" 
-                            Content="🔍 Update" 
-                            Padding="5,2"
-                            ToolTip="Update the looking glass with context around the current line"
-                            Margin="0,0,10,0"/>
-                    <CheckBox Content="Auto-update on line change" 
-                              IsChecked="{Binding AutoUpdateLookingGlass}"
-                              VerticalAlignment="Center"
-                              ToolTip="Automatically update the looking glass when moving to a different line in the main editor"
-                              Checked="AutoUpdateCheckBox_Changed"
-                              Unchecked="AutoUpdateCheckBox_Changed"/>
-                </StackPanel>
-            </GroupBox.Header>
-            <avalon:TextEditor x:Name="LogLookingGlas"
+        <!-- Looking Glass Panel -->
+        <Grid x:Name="LogLookingGlasGroupBox" 
+              Grid.Row="5"
+              Margin="5"
+              
+              Visibility="{Binding ShowLookingGlass, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="0"/>
+            </Grid.RowDefinitions>
+            <DockPanel Grid.Row="0" LastChildFill="False" Background="{DynamicResource ControlBackgroundBrush}">
+                <TextBlock Text="🔍 Looking glass" FontWeight="SemiBold" VerticalAlignment="Center" Margin="5,3"/>
+                <Button Command="{Binding UpdateLookingGlassViewCommand}" 
+                        Content="🔍 Update" 
+                        Padding="5,2"
+                        ToolTip="Update the looking glass with context around the current line"
+                        Margin="10,2"/>
+                <CheckBox Content="Auto-update on line change" 
+                          IsChecked="{Binding AutoUpdateLookingGlass}"
+                          VerticalAlignment="Center"
+                          ToolTip="Automatically update the looking glass when moving to a different line in the main editor"
+                          Checked="AutoUpdateCheckBox_Changed"
+                          Unchecked="AutoUpdateCheckBox_Changed"
+                          Margin="5,0"/>
+                <Button x:Name="LookingGlassDockButton" DockPanel.Dock="Right" Content="⬜ Undock" 
+                        Click="ToggleLookingGlassDock_Click" Padding="8,2" Margin="2" FontSize="11"
+                        ToolTip="Undock Looking Glass to a separate window"/>
+            </DockPanel>
+            <avalon:TextEditor Grid.Row="1"
+                               x:Name="LogLookingGlas"
                                FontFamily="Consolas"
                                FontSize="14"
                                IsReadOnly="True"
+                               ShowLineNumbers="True"
                                WordWrap="False"
                                HorizontalScrollBarVisibility="Auto"
                                VerticalScrollBarVisibility="Auto"
+                               Background="{DynamicResource EditorBackgroundBrush}"
+                               Foreground="{DynamicResource EditorForegroundBrush}"
+                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
                                ContextMenuOpening="LogLookingGlas_ContextMenuOpening">
                 <avalon:TextEditor.ContextMenu>
                     <ContextMenu>
@@ -268,10 +428,10 @@
                                               EnableEmailHyperlinks="True"/>
                 </avalon:TextEditor.Options>
             </avalon:TextEditor>
-        </GroupBox>
+        </Grid>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="5">
+        <StatusBar Grid.Row="6">
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusText}"/>
             </StatusBarItem>
@@ -295,4 +455,5 @@
             </StatusBarItem>
         </StatusBar>
     </Grid>
+    </Border>
 </Window>

@@ -50,6 +50,11 @@ public partial class App : WpfApplication
         base.OnStartup(e);
         await _host.StartAsync();
 
+        // Load and apply theme
+        var settingsService = _host.Services.GetRequiredService<ISettingsService>();
+        var settings = await settingsService.LoadAsync();
+        ApplyTheme(settings.Theme);
+
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
     }
@@ -61,6 +66,26 @@ public partial class App : WpfApplication
             await _host.StopAsync();
         }
         base.OnExit(e);
+    }
+
+    public void ApplyTheme(string themeName)
+    {
+        var themeUri = themeName?.ToLower() == "dark"
+            ? new Uri("pack://application:,,,/LogViewer2026.UI;component/Themes/DarkTheme.xaml")
+            : new Uri("pack://application:,,,/LogViewer2026.UI;component/Themes/LightTheme.xaml");
+
+        // Remove existing theme dictionary if present
+        var existingTheme = Resources.MergedDictionaries
+            .FirstOrDefault(d => d.Source?.OriginalString?.Contains("Theme.xaml") == true);
+
+        if (existingTheme != null)
+        {
+            Resources.MergedDictionaries.Remove(existingTheme);
+        }
+
+        // Load and add new theme at the beginning (highest priority)
+        var theme = new ResourceDictionary { Source = themeUri };
+        Resources.MergedDictionaries.Insert(0, theme);
     }
 }
 

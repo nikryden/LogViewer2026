@@ -12,6 +12,9 @@ namespace LogViewer2026.UI.Helpers;
 public class OffsetLineNumberMargin : AbstractMargin
 {
     private int _lineNumberOffset = 0;
+    private static readonly Typeface _cachedTypeface = new(
+        new System.Windows.Media.FontFamily("Consolas"),
+        FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
     public int LineNumberOffset
     {
@@ -28,14 +31,11 @@ public class OffsetLineNumberMargin : AbstractMargin
 
     protected override System.Windows.Size MeasureOverride(System.Windows.Size availableSize)
     {
-        var typeface = new Typeface(new System.Windows.Media.FontFamily("Consolas"), 
-            FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-
         var textToMeasure = new FormattedText(
             new string('9', GetMaxLineNumberDigits()),
             CultureInfo.CurrentCulture,
             System.Windows.FlowDirection.LeftToRight,
-            typeface,
+            _cachedTypeface,
             12,
             System.Windows.Media.Brushes.Black,
             VisualTreeHelper.GetDpi(this).PixelsPerDip);
@@ -50,11 +50,16 @@ public class OffsetLineNumberMargin : AbstractMargin
             return;
 
         var renderSize = RenderSize;
-        drawingContext.DrawRectangle(System.Windows.Media.Brushes.WhiteSmoke, null, 
-            new Rect(0, 0, renderSize.Width, renderSize.Height));
 
-        var typeface = new Typeface(new System.Windows.Media.FontFamily("Consolas"), 
-            FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+        // Get theme colors from application resources
+        var app = System.Windows.Application.Current;
+        var backgroundBrush = app.TryFindResource("ControlBackgroundBrush") as SolidColorBrush 
+            ?? new SolidColorBrush(System.Windows.Media.Color.FromRgb(37, 37, 38)); // Default dark background
+        var foregroundBrush = app.TryFindResource("SecondaryTextBrush") as SolidColorBrush 
+            ?? new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 128, 128)); // Default gray
+
+        drawingContext.DrawRectangle(backgroundBrush, null, 
+            new Rect(0, 0, renderSize.Width, renderSize.Height));
 
         foreach (var line in textView.VisualLines)
         {
@@ -63,9 +68,9 @@ public class OffsetLineNumberMargin : AbstractMargin
                 lineNumber.ToString(),
                 CultureInfo.CurrentCulture,
                 System.Windows.FlowDirection.LeftToRight,
-                typeface,
+                _cachedTypeface,
                 12,
-                System.Windows.Media.Brushes.Gray,
+                foregroundBrush,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             var y = line.VisualTop - textView.VerticalOffset;

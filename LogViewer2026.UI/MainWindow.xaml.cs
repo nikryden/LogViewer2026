@@ -19,6 +19,9 @@ public partial class MainWindow : Window
     private readonly OffsetLineNumberMargin _lookingGlassLineNumberMargin;
     private bool _isLookingGlassContextMenuActive = false;
     private int _lastLogEditorLineNumber = -1;
+    private FloatingPanelWindow? _logEditorFloatingWindow;
+    private FloatingPanelWindow? _lookingGlassFloatingWindow;
+    private System.Windows.Threading.DispatcherTimer? _selectionSyncTimer;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -58,8 +61,29 @@ public partial class MainWindow : Window
             _viewModel.SelectedText = LogEditor.SelectedText;
             UpdateCurrentLine();
 
-            // Synchronize selection with LogLookingGlas
-            SyncSelectionToLookingGlass();
+            // Throttle synchronization to avoid performance hit during large selections
+            if (_selectionSyncTimer == null)
+            {
+                _selectionSyncTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(150)
+                };
+                _selectionSyncTimer.Tick += (_, _) =>
+                {
+                    _selectionSyncTimer?.Stop();
+
+                    // Update looking glass first to ensure HighlightStartOffset is current
+                    // Only if auto-update is enabled
+                    if (_viewModel.AutoUpdateLookingGlass && !string.IsNullOrEmpty(LogEditor.SelectedText))
+                    {
+                        UpdateLookingGlass();
+                    }
+
+                    SyncSelectionToLookingGlass();
+                };
+            }
+            _selectionSyncTimer.Stop();
+            _selectionSyncTimer.Start();
         };
 
         // Update current line on caret position change and auto-update looking glass if line changed
@@ -116,8 +140,12 @@ public partial class MainWindow : Window
         var findGesture = new KeyGesture(Key.F, ModifierKeys.Control);
         InputBindings.Add(new InputBinding(new RelayCommand(() => SearchBox.Focus()), findGesture));
 
-        // Set initial row height based on ShowLookingGlass setting
-        Loaded += (s, e) => UpdateLookingGlassRowHeight();
+        // Set initial row height and splitter visibility based on ShowLookingGlass setting
+        Loaded += (s, e) =>
+        {
+            UpdateLookingGlassRowHeight();
+            UpdateSplitterVisibility();
+        };
     }
 
     private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -185,36 +213,41 @@ public partial class MainWindow : Window
 
     private void SyncSelectionToLookingGlass()
     {
-        // Only sync if there's a selection and LogLookingGlas is visible and has content
-        if (string.IsNullOrEmpty(LogEditor.SelectedText) || 
+        // Skip if looking glass is hidden, undocked, or selection is too large (performance)
+        if (string.IsNullOrEmpty(LogEditor.SelectedText) ||
+            LogEditor.SelectedText.Length > 10000 || // Skip sync for very large selections
             LogLookingGlas.Document == null || 
             string.IsNullOrEmpty(LogLookingGlas.Text) ||
-            !_viewModel.ShowLookingGlass)
+            !_viewModel.ShowLookingGlass ||
+            _lookingGlassFloatingWindow != null) // Skip if undocked
         {
             return;
         }
 
         try
         {
-            var selectedText = LogEditor.SelectedText;
-            var lookingGlassText = LogLookingGlas.Text;
+            // Use the highlight offset already calculated by the ViewModel
+            // This is more accurate than searching for the text
+            var highlightOffset = _viewModel.SelectedLookingGlas.HighlightStartOffset;
+            var highlightLength = _viewModel.SelectedLookingGlas.HighlightLength;
 
-            // Find the selected text in LogLookingGlas
-            var index = lookingGlassText.IndexOf(selectedText, StringComparison.Ordinal);
-
-            if (index >= 0)
+            if (highlightOffset >= 0 && highlightLength > 0 && 
+                highlightOffset < LogLookingGlas.Text.Length)
             {
-                // Found the text, select it in LogLookingGlas
+                // Calculate the actual length to select (don't exceed text bounds)
+                var actualLength = Math.Min(highlightLength, LogLookingGlas.Text.Length - highlightOffset);
+
+                // Select the text in LogLookingGlas at low priority
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try
                     {
-                        LogLookingGlas.Select(index, selectedText.Length);
+                        LogLookingGlas.Select(highlightOffset, actualLength);
 
                         // Scroll to make the selection visible
                         if (LogLookingGlas.Document != null)
                         {
-                            var location = LogLookingGlas.Document.GetLocation(index);
+                            var location = LogLookingGlas.Document.GetLocation(highlightOffset);
                             LogLookingGlas.ScrollTo(location.Line, location.Column);
                         }
                     }
@@ -420,6 +453,41 @@ public partial class MainWindow : Window
         WpfApp.Current.Shutdown();
     }
 
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Allow dragging the window by clicking and dragging the title bar
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            this.DragMove();
+        }
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = WindowState.Minimized;
+    }
+
+    private void Maximize_Click(object sender, RoutedEventArgs e)
+    {
+        this.WindowState = this.WindowState == WindowState.Maximized 
+            ? WindowState.Normal 
+            : WindowState.Maximized;
+    }
+
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        this.Close();
+    }
+
+    private void Menu_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        // Allow dragging the window by clicking and dragging the menu bar
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            this.DragMove();
+        }
+    }
+
     private void AutoUpdateCheckBox_Changed(object sender, RoutedEventArgs e)
     {
         // Save the setting when checkbox is toggled
@@ -489,33 +557,180 @@ public partial class MainWindow : Window
 
     private void ShowLookingGlass_Click(object sender, RoutedEventArgs e)
     {
+        // If hiding and currently undocked, dock it back first
+        if (!_viewModel.ShowLookingGlass && _lookingGlassFloatingWindow != null)
+        {
+            DockLookingGlass();
+        }
+
         // Save the setting when menu item is toggled
         _ = _viewModel.SaveShowLookingGlassSettingAsync();
 
         // Update the row definition to properly collapse/expand
         UpdateLookingGlassRowHeight();
+        UpdateSplitterVisibility();
     }
 
     private void UpdateLookingGlassRowHeight()
     {
-        // Row 4 is the Looking Glass row
-        if (_viewModel.ShowLookingGlass)
-        {
-            // When visible, share space with LogEditor
-            LogLookingGlasGroupBox.Parent.GetType().GetProperty("RowDefinitions")?.GetValue(LogLookingGlasGroupBox.Parent);
-            var grid = (Grid)LogLookingGlasGroupBox.Parent;
-            grid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
-        }
+        // Don't adjust main grid rows if looking glass is undocked
+        if (_lookingGlassFloatingWindow != null)
+            return;
+
+        // Row 4 is the GridSplitter — always keep it Auto so it sizes to the splitter control itself
+        MainGrid.RowDefinitions[4].Height = GridLength.Auto;
+
+        // Row 5 is the Looking Glass panel
+        MainGrid.RowDefinitions[5].Height = _viewModel.ShowLookingGlass
+            ? new GridLength(1, GridUnitType.Star)
+            : new GridLength(0);
+    }
+
+    private void ToggleLogEditorDock_Click(object sender, RoutedEventArgs e)
+    {
+        if (_logEditorFloatingWindow == null)
+            UndockLogEditor();
         else
+            DockLogEditor();
+    }
+
+    private void UndockLogEditor()
+    {
+        MainGrid.Children.Remove(LogEditorPanel);
+        MainGrid.RowDefinitions[3].Height = new GridLength(0);
+
+        _logEditorFloatingWindow = new FloatingPanelWindow
         {
-            // When hidden, collapse the row
-            var grid = (Grid)LogLookingGlasGroupBox.Parent;
-            grid.RowDefinitions[4].Height = new GridLength(0);
-        }
+            Title = "Log Editor - LogViewer2026",
+            Owner = this,
+            Width = Width * 0.8,
+            Height = Height * 0.5,
+            DataContext = _viewModel
+        };
+        _logEditorFloatingWindow.SetContent(LogEditorPanel);
+        _logEditorFloatingWindow.DockRequested += DockLogEditor;
+
+        LogEditorDockButton.Content = "📌 Dock";
+        LogEditorDockButton.ToolTip = "Dock Log Editor back to the main window";
+        UndockLogEditorMenuItem.Header = "Dock _Log Editor";
+
+        UpdateSplitterVisibility();
+        _logEditorFloatingWindow.Show();
+    }
+
+    private void DockLogEditor()
+    {
+        if (_logEditorFloatingWindow == null) return;
+
+        _logEditorFloatingWindow.RemoveContent();
+        _logEditorFloatingWindow.DockRequested -= DockLogEditor;
+        _logEditorFloatingWindow.ForceClose();
+        _logEditorFloatingWindow = null;
+
+        Grid.SetRow(LogEditorPanel, 3);
+        MainGrid.Children.Add(LogEditorPanel);
+        MainGrid.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
+
+        LogEditorDockButton.Content = "⬜ Undock";
+        LogEditorDockButton.ToolTip = "Undock Log Editor to a separate window";
+        UndockLogEditorMenuItem.Header = "Undock _Log Editor";
+
+        UpdateSplitterVisibility();
+    }
+
+    private void ToggleLookingGlassDock_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lookingGlassFloatingWindow == null)
+            UndockLookingGlass();
+        else
+            DockLookingGlass();
+    }
+
+    private void UndockLookingGlass()
+    {
+        MainGrid.Children.Remove(LogLookingGlasGroupBox);
+        MainGrid.RowDefinitions[5].Height = new GridLength(0);
+
+        // Clear the visibility binding so the panel is always visible in the floating window
+        LogLookingGlasGroupBox.ClearValue(VisibilityProperty);
+        LogLookingGlasGroupBox.Visibility = Visibility.Visible;
+
+        _lookingGlassFloatingWindow = new FloatingPanelWindow
+        {
+            Title = "Looking Glass - LogViewer2026",
+            Owner = this,
+            Width = Width * 0.8,
+            Height = Height * 0.4,
+            DataContext = _viewModel
+        };
+        _lookingGlassFloatingWindow.SetContent(LogLookingGlasGroupBox);
+        _lookingGlassFloatingWindow.DockRequested += DockLookingGlass;
+
+        LookingGlassDockButton.Content = "📌 Dock";
+        LookingGlassDockButton.ToolTip = "Dock Looking Glass back to the main window";
+        UndockLookingGlassMenuItem.Header = "Dock Looking _Glass";
+
+        UpdateSplitterVisibility();
+        _lookingGlassFloatingWindow.Show();
+    }
+
+    private void DockLookingGlass()
+    {
+        if (_lookingGlassFloatingWindow == null) return;
+
+        _lookingGlassFloatingWindow.RemoveContent();
+        _lookingGlassFloatingWindow.DockRequested -= DockLookingGlass;
+        _lookingGlassFloatingWindow.ForceClose();
+        _lookingGlassFloatingWindow = null;
+
+        // Restore the visibility binding
+        var binding = new System.Windows.Data.Binding("ShowLookingGlass")
+        {
+            Converter = (System.Windows.Data.IValueConverter)System.Windows.Application.Current.Resources["BoolToVisibilityConverter"]
+        };
+        LogLookingGlasGroupBox.SetBinding(VisibilityProperty, binding);
+
+        Grid.SetRow(LogLookingGlasGroupBox, 5);
+        MainGrid.Children.Add(LogLookingGlasGroupBox);
+        UpdateLookingGlassRowHeight();
+
+        LookingGlassDockButton.Content = "⬜ Undock";
+        LookingGlassDockButton.ToolTip = "Undock Looking Glass to a separate window";
+        UndockLookingGlassMenuItem.Header = "Undock Looking _Glass";
+
+        UpdateSplitterVisibility();
+    }
+
+    private void UpdateSplitterVisibility()
+    {
+        PanelSplitter.Visibility = (_logEditorFloatingWindow == null && _lookingGlassFloatingWindow == null && _viewModel.ShowLookingGlass)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     protected override void OnClosed(EventArgs e)
     {
+        // Clean up timer
+        if (_selectionSyncTimer != null)
+        {
+            _selectionSyncTimer.Stop();
+            _selectionSyncTimer = null;
+        }
+
+        // Close any floating panel windows
+        if (_logEditorFloatingWindow != null)
+        {
+            _logEditorFloatingWindow.DockRequested -= DockLogEditor;
+            _logEditorFloatingWindow.ForceClose();
+            _logEditorFloatingWindow = null;
+        }
+        if (_lookingGlassFloatingWindow != null)
+        {
+            _lookingGlassFloatingWindow.DockRequested -= DockLookingGlass;
+            _lookingGlassFloatingWindow.ForceClose();
+            _lookingGlassFloatingWindow = null;
+        }
+
         base.OnClosed(e);
         _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
         _viewModel.OnSearchResultChanged -= NavigateToSearchResult;
@@ -528,6 +743,21 @@ public partial class MainWindow : Window
         {
             disposable.Dispose();
         }
+    }
+
+    private void OpenFilterWindow_Click(object sender, RoutedEventArgs e)
+    {
+        var filterWindow = new FilterWindow(_viewModel)
+        {
+            Owner = this
+        };
+        filterWindow.ShowDialog();
+    }
+
+    private void ClearSearch_Click(object sender, RoutedEventArgs e)
+    {
+        _viewModel.SearchText = string.Empty;
+        SearchBox.Focus();
     }
 }
 

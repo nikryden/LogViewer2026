@@ -74,8 +74,9 @@ public sealed class SearchResultHighlighter : DocumentColorizingTransformer
             var endOffset = startOffset + _searchTerm.Length;
 
             // Check if this is the current result
-            var isCurrent = _searchResults.Any(r => r.StartOffset == startOffset && 
-                                                    _searchResults.IndexOf(r) == _currentResultIndex);
+            var isCurrent = _currentResultIndex >= 0 &&
+                            _currentResultIndex < _searchResults.Count &&
+                            _searchResults[_currentResultIndex].StartOffset == startOffset;
 
             ChangeLinePart(
                 startOffset,
