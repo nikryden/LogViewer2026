@@ -256,6 +256,14 @@
 
     <!-- ComboBox -->
     <Style TargetType="{x:Type ComboBox}">
+        <Style.Resources>
+            <!-- WPF internally applies SystemColors.HighlightBrush to the selection box
+                 when IsKeyboardFocusWithin=True. Override to keep the dark background. -->
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"                        Color="#252526"/>
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"                     Color="#D4D4D4"/>
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"     Color="#252526"/>
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#D4D4D4"/>
+        </Style.Resources>
         <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
