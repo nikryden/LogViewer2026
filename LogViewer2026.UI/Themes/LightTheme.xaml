@@ -188,13 +188,14 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 VerticalAlignment="Center">
-                            <Path Name="CheckMark"
-                                  Data="M 2 7 L 6 11 L 14 3"
-                                  Stroke="White"
-                                  StrokeThickness="2.5"
-                                  StrokeStartLineCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  Visibility="Collapsed"/>
+                            <Viewbox Width="12" Height="12">
+                                <Canvas Width="16" Height="16">
+                                    <Path Name="CheckMark"
+                                          Data="M 14.5,3 L 6.5,13 L 1.5,8.5 L 3,7 L 6.5,10 L 13,1.5 Z"
+                                          Fill="White"
+                                          Visibility="Collapsed"/>
+                                </Canvas>
+                            </Viewbox>
                         </Border>
                         <ContentPresenter Margin="{TemplateBinding Padding}"
                                         VerticalAlignment="Center"
