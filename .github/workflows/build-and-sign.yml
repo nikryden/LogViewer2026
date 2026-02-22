@@ -64,7 +64,7 @@ jobs:
     
     # Code Signing using certificate from secrets
     - name: Decode certificate
-      if: github.event_name != 'pull_request'
+      if: false  # TEMPORARILY DISABLED
       shell: pwsh
       run: |
         $certificateBytes = [System.Convert]::FromBase64String("${{ secrets.SIGNING_CERTIFICATE_BASE64 }}")
@@ -73,7 +73,7 @@ jobs:
         echo "CERTIFICATE_PATH=$certificatePath" >> $env:GITHUB_ENV
     
     - name: Sign executable
-      if: github.event_name != 'pull_request'
+      if: false  # TEMPORARILY DISABLED
       shell: pwsh
       run: |
         # Validate secrets
@@ -170,7 +170,7 @@ jobs:
         }
     
     - name: Remove certificate
-      if: always()
+      if: false  # TEMPORARILY DISABLED
       shell: pwsh
       run: |
         if ($env:CERTIFICATE_PATH -and (Test-Path $env:CERTIFICATE_PATH)) {
