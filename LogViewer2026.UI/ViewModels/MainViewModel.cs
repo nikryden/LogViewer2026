@@ -396,6 +396,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         var dialog = new OpenFileDialog
         {
+            ShowHiddenItems = true,            
             Filter = "Log Files (*.log;*.txt)|*.log;*.txt|JSON Files (*.json)|*.json|All Files (*.*)|*.*",
             Title = "Open Log File"
         };
@@ -845,6 +846,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         var dialog = new OpenFileDialog
         {
+            ShowHiddenItems = true,
             Filter = "Log Files (*.log;*.txt)|*.log;*.txt|JSON Files (*.json)|*.json|All Files (*.*)|*.*",
             Title = "Open Multiple Log Files",
             Multiselect = true
