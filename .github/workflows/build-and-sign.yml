@@ -49,8 +49,9 @@ jobs:
         dotnet publish ${{ env.PROJECT_PATH }} `
           --configuration ${{ env.BUILD_CONFIGURATION }} `
           --output ${{ env.OUTPUT_DIR }} `
-          --self-contained false `
-          -p:PublishSingleFile=false `
+          --runtime win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
           -p:PublishReadyToRun=true
     
     - name: Get version
