@@ -214,43 +214,32 @@
         <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="4,0,0,0"/>
+        <Setter Property="Padding" Value="6,4"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type CheckBox}">
-                    <StackPanel Orientation="Horizontal" Background="Transparent">
-                        <Border Name="CheckBorder"
-                                Width="16"
-                                Height="16"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                VerticalAlignment="Center">
-                            <Viewbox Width="12" Height="12">
-                                <Canvas Width="16" Height="16">
-                                    <Path Name="CheckMark"
-                                          Data="M 14.5,3 L 6.5,13 L 1.5,8.5 L 3,7 L 6.5,10 L 13,1.5 Z"
-                                          Fill="{DynamicResource SelectionTextBrush}"
-                                          Visibility="Collapsed"/>
-                                </Canvas>
-                            </Viewbox>
-                        </Border>
-                        <ContentPresenter Margin="{TemplateBinding Padding}"
-                                        VerticalAlignment="Center"
+                    <Border Name="Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="2">
+                        <ContentPresenter VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
                                         RecognizesAccessKey="True"/>
-                    </StackPanel>
+                    </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="CheckBorder" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
-                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                            <Setter TargetName="Border" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource SelectionTextBrush}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}"/>
-                            <Setter TargetName="CheckBorder" Property="Background" Value="#2D2D30"/>
+                            <Setter TargetName="Border" Property="Background" Value="#2D2D30"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
