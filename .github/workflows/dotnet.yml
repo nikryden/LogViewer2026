@@ -35,7 +35,7 @@ jobs:
         
     - name: Publish
       if: github.ref == 'refs/heads/main'
-      run: dotnet publish LogViewer2026.UI/LogViewer2026.UI.csproj --configuration Release --output ./publish --self-contained true --runtime win-x64
+      run: dotnet publish LogViewer2026.UI/LogViewer2026.UI.csproj --configuration Release --output ./publish --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true
       
     - name: Upload artifacts
       if: github.ref == 'refs/heads/main'

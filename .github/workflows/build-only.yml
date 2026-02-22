@@ -40,7 +40,10 @@ jobs:
         dotnet publish ${{ env.PROJECT_PATH }} `
           --configuration ${{ env.BUILD_CONFIGURATION }} `
           --output ${{ env.OUTPUT_DIR }} `
-          --self-contained false
+          --runtime win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:PublishReadyToRun=true
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
