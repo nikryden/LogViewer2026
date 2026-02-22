@@ -1,6 +1,6 @@
 # LogViewer2026
 
-A high-performance Windows desktop application for viewing, searching, and filtering large Serilog log files (2GB+).
+A high-performance Windows desktop application for viewing, searching, and filtering large log files (2GB+).
 
 ## Features
 
