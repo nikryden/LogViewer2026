@@ -19,6 +19,8 @@ env:
 jobs:
   build-and-sign:
     runs-on: windows-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
@@ -42,6 +44,7 @@ jobs:
       continue-on-error: true
     
     - name: Publish application
+      shell: pwsh
       run: |
         dotnet publish ${{ env.PROJECT_PATH }} `
           --configuration ${{ env.BUILD_CONFIGURATION }} `
@@ -59,8 +62,12 @@ jobs:
         } else {
           $version = "1.0.0-dev.$($env:GITHUB_RUN_NUMBER)"
         }
+        # Compute a normalised Windows output path and expose it for all later steps
+        $outputDir = Join-Path $env:GITHUB_WORKSPACE "publish"
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-        echo "Version: $version"
+        echo "OUTPUT_DIR=$outputDir" >> $env:GITHUB_ENV
+        Write-Host "Version : $version"
+        Write-Host "OutputDir: $outputDir"
     
     # Code Signing using certificate from secrets
     - name: Decode certificate
@@ -182,8 +189,16 @@ jobs:
       shell: pwsh
       run: |
         $archiveName = "LogViewer2026-v${{ steps.get_version.outputs.VERSION }}-windows.zip"
-        Compress-Archive -Path "${{ env.OUTPUT_DIR }}\*" -DestinationPath "${{ github.workspace }}\$archiveName"
+        $archivePath = Join-Path $env:GITHUB_WORKSPACE $archiveName
+        Write-Host "Compressing: $env:OUTPUT_DIR  ->  $archivePath"
+        Compress-Archive -Path "$env:OUTPUT_DIR\*" -DestinationPath $archivePath
+        if (-not (Test-Path $archivePath)) {
+          Write-Error "Archive was not created at: $archivePath"
+          exit 1
+        }
+        Write-Host "Archive created: $archivePath  ($([math]::Round((Get-Item $archivePath).Length / 1MB, 2)) MB)"
         echo "ARCHIVE_NAME=$archiveName" >> $env:GITHUB_ENV
+        echo "ARCHIVE_PATH=$archivePath" >> $env:GITHUB_ENV
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -196,7 +211,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: LogViewer2026-v${{ steps.get_version.outputs.VERSION }}-zip
-        path: ${{ github.workspace }}/${{ env.ARCHIVE_NAME }}
+        path: ${{ env.ARCHIVE_PATH }}
         retention-days: 90
     
     # Create GitHub Release for tags
@@ -204,8 +219,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/v')
       uses: softprops/action-gh-release@v1
       with:
-        files: |
-          ${{ github.workspace }}/${{ env.ARCHIVE_NAME }}
+        files: ${{ env.ARCHIVE_PATH }}
         draft: false
         prerelease: false
         generate_release_notes: true
