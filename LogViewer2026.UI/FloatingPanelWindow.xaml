@@ -5,7 +5,10 @@
         Height="500" Width="900"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="True"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         Background="{DynamicResource WindowBackgroundBrush}"
-        Foreground="{DynamicResource PrimaryTextBrush}">
+        Foreground="{DynamicResource PrimaryTextBrush}"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
     <ContentControl x:Name="ContentHost"/>
 </Window>

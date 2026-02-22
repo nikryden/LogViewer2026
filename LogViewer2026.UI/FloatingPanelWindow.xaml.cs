@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
 
 namespace LogViewer2026.UI;
 
@@ -11,6 +12,14 @@ public partial class FloatingPanelWindow : Window
     public FloatingPanelWindow()
     {
         InitializeComponent();
+    }
+
+    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
     }
 
     public void SetContent(UIElement content)
