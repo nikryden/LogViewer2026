@@ -173,35 +173,49 @@
     <!-- CheckBox -->
     <Style TargetType="{x:Type CheckBox}">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
-        <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#999999"/>
+        <Setter Property="Padding" Value="4,0,0,0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type CheckBox}">
-                    <Border Name="Border"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Padding="{TemplateBinding Padding}"
-                            CornerRadius="2">
-                        <ContentPresenter VerticalAlignment="Center"
-                                        HorizontalAlignment="Center"
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <!-- Checkbox box -->
+                        <Border Name="CheckBoxBorder"
+                                Width="18"
+                                Height="18"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="2"
+                                CornerRadius="2"
+                                VerticalAlignment="Center">
+                            <!-- Checkmark -->
+                            <TextBlock Name="CheckMark"
+                                      Text="✓"
+                                      FontSize="14"
+                                      FontWeight="Bold"
+                                      Foreground="#0078D7"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      Margin="0,-2,0,0"
+                                      Visibility="Collapsed"/>
+                        </Border>
+                        <!-- Label text -->
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                        VerticalAlignment="Center"
                                         RecognizesAccessKey="True"/>
-                    </Border>
+                    </StackPanel>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="#0078D7"/>
-                            <Setter TargetName="Border" Property="BorderBrush" Value="#0078D7"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="BorderBrush" Value="#0078D7"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="#0078D7"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}"/>
-                            <Setter TargetName="Border" Property="Background" Value="#F0F0F0"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Background" Value="#F0F0F0"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="#D0D0D0"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
