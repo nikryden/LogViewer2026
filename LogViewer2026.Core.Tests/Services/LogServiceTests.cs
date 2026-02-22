@@ -41,7 +41,7 @@ public class LogServiceTests : IDisposable
         await service.LoadFileAsync(_testFilePath, progress);
 
         // Allow progress callback to complete
-        await Task.Delay(100);
+        await Task.Delay(100, CancellationToken.None);
         reportedCount.Should().NotBeNull();
         reportedCount.Should().BeGreaterThan(0);
     }
