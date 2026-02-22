@@ -5,9 +5,9 @@ namespace LogViewer2026.Core.Services;
 
 public interface IFilterConfigurationService
 {
-    Task<FilterConfigurationCollection> LoadAsync(string filePath);
-    Task SaveAsync(FilterConfigurationCollection configuration, string filePath);
-    Task<FilterConfigurationCollection> GetDefaultAsync();
+    Task<FilterConfigurationCollection> LoadAsync(string filePath, CancellationToken cancellationToken = default);
+    Task SaveAsync(FilterConfigurationCollection configuration, string filePath, CancellationToken cancellationToken = default);
+    Task<FilterConfigurationCollection> GetDefaultAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class FilterConfigurationService : IFilterConfigurationService
@@ -18,14 +18,14 @@ public sealed class FilterConfigurationService : IFilterConfigurationService
         PropertyNameCaseInsensitive = true
     };
 
-    public async Task<FilterConfigurationCollection> LoadAsync(string filePath)
+    public async Task<FilterConfigurationCollection> LoadAsync(string filePath, CancellationToken cancellationToken = default)
     {
         if (!File.Exists(filePath))
             return new FilterConfigurationCollection();
 
         try
         {
-            var json = await File.ReadAllTextAsync(filePath);
+            var json = await File.ReadAllTextAsync(filePath, cancellationToken);
             return JsonSerializer.Deserialize<FilterConfigurationCollection>(json, _jsonOptions)
                    ?? new FilterConfigurationCollection();
         }
@@ -35,7 +35,7 @@ public sealed class FilterConfigurationService : IFilterConfigurationService
         }
     }
 
-    public async Task SaveAsync(FilterConfigurationCollection configuration, string filePath)
+    public async Task SaveAsync(FilterConfigurationCollection configuration, string filePath, CancellationToken cancellationToken = default)
     {
         var directory = Path.GetDirectoryName(filePath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -44,10 +44,10 @@ public sealed class FilterConfigurationService : IFilterConfigurationService
         }
 
         var json = JsonSerializer.Serialize(configuration, _jsonOptions);
-        await File.WriteAllTextAsync(filePath, json);
+        await File.WriteAllTextAsync(filePath, json, cancellationToken);
     }
 
-    public Task<FilterConfigurationCollection> GetDefaultAsync()
+    public Task<FilterConfigurationCollection> GetDefaultAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(new FilterConfigurationCollection
         {

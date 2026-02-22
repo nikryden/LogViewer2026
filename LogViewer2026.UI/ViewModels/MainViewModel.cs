@@ -1033,7 +1033,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 {
                     Filters = SavedFilters.ToList()
                 };
-                await _filterConfigService.SaveAsync(collection, dialog.FileName);
+                await _filterConfigService.SaveAsync(collection, dialog.FileName, CancellationToken.None);
                 StatusText = "Filters exported successfully";
             }
             catch (Exception ex)
@@ -1056,7 +1056,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             try
             {
-                var collection = await _filterConfigService.LoadAsync(dialog.FileName);
+                var collection = await _filterConfigService.LoadAsync(dialog.FileName, CancellationToken.None);
                 foreach (var filter in collection.Filters)
                 {
                     if (!SavedFilters.Any(f => f.Name == filter.Name))
@@ -1085,7 +1085,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
             if (File.Exists(filtersPath))
             {
-                var collection = await _filterConfigService.LoadAsync(filtersPath);
+                var collection = await _filterConfigService.LoadAsync(filtersPath, CancellationToken.None);
                 SavedFilters.Clear();
                 foreach (var filter in collection.Filters)
                 {
@@ -1094,7 +1094,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             }
             else
             {
-                var defaults = await _filterConfigService.GetDefaultAsync();
+                var defaults = await _filterConfigService.GetDefaultAsync(CancellationToken.None);
                 foreach (var filter in defaults.Filters)
                 {
                     SavedFilters.Add(filter);
@@ -1121,7 +1121,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 Filters = SavedFilters.ToList()
             };
 
-            await _filterConfigService.SaveAsync(collection, filtersPath);
+            await _filterConfigService.SaveAsync(collection, filtersPath, CancellationToken.None);
         }
         catch
         {

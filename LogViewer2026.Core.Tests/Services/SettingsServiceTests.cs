@@ -64,7 +64,7 @@ public class SettingsServiceTests : IDisposable
     [Fact]
     public async Task LoadAsync_WithCorruptedFile_ShouldReturnDefaults()
     {
-        await File.WriteAllTextAsync(_testSettingsPath, "this is not json{{{");
+        await File.WriteAllTextAsync(_testSettingsPath, "this is not json{{{", CancellationToken.None);
         var service = new SettingsService(_testSettingsPath);
 
         var settings = await service.LoadAsync();
