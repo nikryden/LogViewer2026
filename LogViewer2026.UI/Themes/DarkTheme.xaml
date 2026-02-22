@@ -211,32 +211,29 @@
     <!-- CheckBox -->
     <Style TargetType="{x:Type CheckBox}">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
-        <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-        <Setter Property="Padding" Value="4,0,0,0"/>
+        <Setter Property="Padding" Value="5,0,0,0"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type CheckBox}">
                     <StackPanel Orientation="Horizontal" Background="Transparent">
                         <!-- Checkbox box -->
                         <Border Name="CheckBoxBorder"
-                                Width="18"
-                                Height="18"
+                                Width="16"
+                                Height="16"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="2"
+                                BorderThickness="1"
                                 CornerRadius="2"
                                 VerticalAlignment="Center">
-                            <!-- Checkmark -->
-                            <TextBlock Name="CheckMark"
-                                      Text="✓"
-                                      FontSize="14"
-                                      FontWeight="Bold"
-                                      Foreground="{DynamicResource SelectionBackgroundBrush}"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"
-                                      Margin="0,-2,0,0"
-                                      Visibility="Collapsed"/>
+                            <!-- Checkmark using Path -->
+                            <Path Name="CheckMark"
+                                  Data="M 2,8 L 6,12 L 14,4"
+                                  Stroke="White"
+                                  StrokeThickness="2"
+                                  Visibility="Hidden"
+                                  Stretch="None"/>
                         </Border>
                         <!-- Label text -->
                         <ContentPresenter Margin="{TemplateBinding Padding}"
@@ -246,6 +243,8 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>

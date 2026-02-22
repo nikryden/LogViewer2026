@@ -70,8 +70,8 @@
 
             <!-- Title -->
             <Image Source="/svgviewer-output.png" 
-                   Width="16" 
-                   Height="16" 
+                   Width="32" 
+                   Height="32" 
                    Margin="10,0,5,0"
                    VerticalAlignment="Center"/>
             <TextBlock Text="LogViewer2026 - High-Performance Serilog Log Viewer"
