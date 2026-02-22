@@ -211,6 +211,53 @@
     <!-- CheckBox -->
     <Style TargetType="{x:Type CheckBox}">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="Padding" Value="5,0,0,0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type CheckBox}">
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <!-- Checkbox box -->
+                        <Border Name="CheckBoxBorder"
+                                Width="16"
+                                Height="16"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="2"
+                                VerticalAlignment="Center">
+                            <!-- Checkmark using Path -->
+                            <Path Name="CheckMark"
+                                  Data="M 2,8 L 6,12 L 14,4"
+                                  Stroke="White"
+                                  StrokeThickness="2"
+                                  Visibility="Hidden"
+                                  Stretch="None"/>
+                        </Border>
+                        <!-- Label text -->
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                        VerticalAlignment="Center"
+                                        RecognizesAccessKey="True"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Background" Value="#2D2D30"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource DisabledTextBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- TextBox -->
@@ -256,6 +303,14 @@
 
     <!-- ComboBox -->
     <Style TargetType="{x:Type ComboBox}">
+        <Style.Resources>
+            <!-- WPF internally applies SystemColors.HighlightBrush to the selection box
+                 when IsKeyboardFocusWithin=True. Override to keep the dark background. -->
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"                        Color="#252526"/>
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"                     Color="#D4D4D4"/>
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"     Color="#252526"/>
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#D4D4D4"/>
+        </Style.Resources>
         <Setter Property="Background" Value="{DynamicResource ControlBackgroundBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
@@ -264,19 +319,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ComboBox}">
                     <Grid>
-                        <Grid.Resources>
-                            <!-- ToggleButton style for ComboBox (no hover effect) -->
-                            <Style TargetType="ToggleButton">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ToggleButton">
-                                            <Border Background="Transparent" BorderBrush="Transparent"/>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Grid.Resources>
-
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="20"/>
@@ -321,7 +363,13 @@
                                     Grid.ColumnSpan="2"
                                     Focusable="false"
                                     IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                    ClickMode="Press"/>
+                                    ClickMode="Press">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" BorderThickness="0"/>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
 
                         <!-- Editable TextBox -->
                         <TextBox x:Name="PART_EditableTextBox"
@@ -374,6 +422,14 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- ToolBar keyed styles – WPF calls SetResourceReference(StyleProperty, ToolBar.ComboBoxStyleKey)
+         inside PrepareContainerForItemOverride, so without these entries WPF falls back to the
+         Aero/Modern theme's versions which use SystemColors (light-blue selection, etc.). -->
+    <Style x:Key="{x:Static ToolBar.ComboBoxStyleKey}"  TargetType="{x:Type ComboBox}"
+           BasedOn="{StaticResource {x:Type ComboBox}}"/>
+    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}"   TargetType="{x:Type TextBox}"
+           BasedOn="{StaticResource {x:Type TextBox}}"/>
 
     <!-- ListBox -->
     <Style TargetType="{x:Type ListBox}">

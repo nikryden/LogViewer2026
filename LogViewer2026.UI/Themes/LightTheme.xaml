@@ -173,6 +173,53 @@
     <!-- CheckBox -->
     <Style TargetType="{x:Type CheckBox}">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#999999"/>
+        <Setter Property="Padding" Value="5,0,0,0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type CheckBox}">
+                    <StackPanel Orientation="Horizontal" Background="Transparent">
+                        <!-- Checkbox box -->
+                        <Border Name="CheckBoxBorder"
+                                Width="16"
+                                Height="16"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="2"
+                                VerticalAlignment="Center">
+                            <!-- Checkmark using Path -->
+                            <Path Name="CheckMark"
+                                  Data="M 2,8 L 6,12 L 14,4"
+                                  Stroke="White"
+                                  StrokeThickness="2"
+                                  Visibility="Hidden"
+                                  Stretch="None"/>
+                        </Border>
+                        <!-- Label text -->
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                        VerticalAlignment="Center"
+                                        RecognizesAccessKey="True"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Background" Value="#0078D7"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="#0078D7"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="#0078D7"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Background" Value="#F0F0F0"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="#D0D0D0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- TextBox -->
@@ -226,19 +273,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ComboBox}">
                     <Grid>
-                        <Grid.Resources>
-                            <!-- ToggleButton style for ComboBox (no hover effect) -->
-                            <Style TargetType="ToggleButton">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ToggleButton">
-                                            <Border Background="Transparent" BorderBrush="Transparent"/>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Grid.Resources>
-
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="20"/>
@@ -283,7 +317,13 @@
                                     Grid.ColumnSpan="2"
                                     Focusable="false"
                                     IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                    ClickMode="Press"/>
+                                    ClickMode="Press">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" BorderThickness="0"/>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
 
                         <!-- Editable TextBox -->
                         <TextBox x:Name="PART_EditableTextBox"
@@ -366,6 +406,12 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- ToolBar keyed styles – same reason as DarkTheme -->
+    <Style x:Key="{x:Static ToolBar.ComboBoxStyleKey}"  TargetType="{x:Type ComboBox}"
+           BasedOn="{StaticResource {x:Type ComboBox}}"/>
+    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}"   TargetType="{x:Type TextBox}"
+           BasedOn="{StaticResource {x:Type TextBox}}"/>
 
     <!-- ListBox -->
     <Style TargetType="{x:Type ListBox}">

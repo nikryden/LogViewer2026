@@ -12,7 +12,7 @@
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
         AllowsTransparency="True"
-        Background="Transparent">
+        Background="Transparent" Icon="/svgviewer-output2.ico">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="5"
@@ -34,7 +34,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
+           
         <!-- Custom Title Bar -->
         <DockPanel Grid.Row="0" 
                    Background="{DynamicResource MenuBackgroundBrush}"
@@ -69,9 +69,14 @@
             </StackPanel>
 
             <!-- Title -->
-            <TextBlock Text="LogViewer2026 - High-Performance Serilog Log Viewer"
+            <Image Source="/svgviewer-output.png" 
+                   Width="32" 
+                   Height="32" 
+                   Margin="10,0,5,0"
+                   VerticalAlignment="Center"/>
+            <TextBlock Text="LogViewer2026"
                        VerticalAlignment="Center"
-                       Margin="10,0"
+                       Margin="0"
                        Foreground="{DynamicResource PrimaryTextBrush}"
                        FontSize="12"/>
         </DockPanel>
@@ -247,6 +252,33 @@
                     Content="Clear Filters" 
                     Margin="5,0"
                     ToolTip="Clear all active filters"/>
+
+            <Separator Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <TextBlock Text="Go to file:" 
+                       VerticalAlignment="Center" 
+                       Margin="5,0"
+                       Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <ComboBox x:Name="GoToFileComboBox"
+                      ItemsSource="{Binding LoadedFileNames}"
+                      SelectedItem="{Binding SelectedDisplayFile, Mode=TwoWay}"
+                      Width="200"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"
+                      ToolTip="Navigate to the beginning of a loaded file"/>
+            <Button Command="{Binding GoToSelectedFileCommand}"
+                    Content="▶"
+                    Width="25"
+                    Margin="2,0"
+                    FontSize="11"
+                    ToolTip="Go to selected file (re-navigate)"
+                    Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <CheckBox Content="Show only"
+                      IsChecked="{Binding ShowSelectedFileOnly}"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      ToolTip="Show only the content of the selected file"
+                      Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </ToolBar>
 
         <!-- Log Editor Panel -->
