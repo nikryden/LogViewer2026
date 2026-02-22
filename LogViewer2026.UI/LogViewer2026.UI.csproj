@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <None Remove="Logger2026_1.ico" />
+    <None Remove="svgviewer-output.png" />
+    <None Remove="svgviewer-output2.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,6 +42,8 @@
     <Resource Include="Logger2026_1.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="svgviewer-output.png" />
+    <Resource Include="svgviewer-output2.ico" />
   </ItemGroup>
 
 </Project>

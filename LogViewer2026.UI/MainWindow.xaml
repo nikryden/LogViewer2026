@@ -12,7 +12,7 @@
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
         AllowsTransparency="True"
-        Background="Transparent" Icon="/Logger2026_1.ico">
+        Background="Transparent" Icon="/svgviewer-output2.ico">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="5"
@@ -69,7 +69,7 @@
             </StackPanel>
 
             <!-- Title -->
-            <Image Source="/Logger2026_1.ico" 
+            <Image Source="/svgviewer-output.png" 
                    Width="16" 
                    Height="16" 
                    Margin="10,0,5,0"
