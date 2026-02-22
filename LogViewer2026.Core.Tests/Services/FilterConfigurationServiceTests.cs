@@ -28,7 +28,7 @@ public class FilterConfigurationServiceTests : IDisposable
     {
         var service = new FilterConfigurationService();
 
-        var result = await service.GetDefaultAsync();
+        var result = await service.GetDefaultAsync(TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result.Filters.Should().NotBeEmpty();
@@ -42,7 +42,7 @@ public class FilterConfigurationServiceTests : IDisposable
     {
         var service = new FilterConfigurationService();
 
-        var result = await service.GetDefaultAsync();
+        var result = await service.GetDefaultAsync(TestContext.Current.CancellationToken);
         var errorsOnly = result.Filters.First(f => f.Name == "Errors Only");
 
         errorsOnly.LogLevel.Should().Be(LogLevel.Error);
@@ -65,8 +65,8 @@ public class FilterConfigurationServiceTests : IDisposable
             ]
         };
 
-        await service.SaveAsync(collection, _testFilePath);
-        var loaded = await service.LoadAsync(_testFilePath);
+        await service.SaveAsync(collection, _testFilePath, TestContext.Current.CancellationToken);
+        var loaded = await service.LoadAsync(_testFilePath, TestContext.Current.CancellationToken);
 
         loaded.Filters.Should().HaveCount(1);
         loaded.Filters[0].Name.Should().Be("Test Filter");
@@ -80,7 +80,7 @@ public class FilterConfigurationServiceTests : IDisposable
         var service = new FilterConfigurationService();
         var nonExistentPath = Path.Combine(_testDir, "nonexistent.json");
 
-        var result = await service.LoadAsync(nonExistentPath);
+        var result = await service.LoadAsync(nonExistentPath, TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result.Filters.Should().BeEmpty();
@@ -89,10 +89,10 @@ public class FilterConfigurationServiceTests : IDisposable
     [Fact]
     public async Task LoadAsync_WithCorruptedFile_ShouldReturnEmptyCollection()
     {
-        await File.WriteAllTextAsync(_testFilePath, "not valid json{{{");
+        await File.WriteAllTextAsync(_testFilePath, "not valid json{{{", TestContext.Current.CancellationToken);
         var service = new FilterConfigurationService();
 
-        var result = await service.LoadAsync(_testFilePath);
+        var result = await service.LoadAsync(_testFilePath, TestContext.Current.CancellationToken);
 
         result.Should().NotBeNull();
         result.Filters.Should().BeEmpty();
@@ -108,7 +108,7 @@ public class FilterConfigurationServiceTests : IDisposable
             Filters = [new FilterConfiguration { Name = "Test" }]
         };
 
-        await service.SaveAsync(collection, nestedPath);
+        await service.SaveAsync(collection, nestedPath, TestContext.Current.CancellationToken);
 
         File.Exists(nestedPath).Should().BeTrue();
     }
@@ -128,8 +128,8 @@ public class FilterConfigurationServiceTests : IDisposable
             LastUsedFilter = "Filter 2"
         };
 
-        await service.SaveAsync(collection, _testFilePath);
-        var loaded = await service.LoadAsync(_testFilePath);
+        await service.SaveAsync(collection, _testFilePath, TestContext.Current.CancellationToken);
+        var loaded = await service.LoadAsync(_testFilePath, TestContext.Current.CancellationToken);
 
         loaded.Filters.Should().HaveCount(3);
         loaded.LastUsedFilter.Should().Be("Filter 2");
