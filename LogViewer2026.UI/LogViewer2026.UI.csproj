@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Logger2026_1.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.3.0.90" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
@@ -30,6 +34,12 @@
     <ProjectReference Include="..\LogViewer2026.Application\LogViewer2026.Application.csproj" />
     <ProjectReference Include="..\LogViewer2026.Infrastructure\LogViewer2026.Infrastructure.csproj" />
     <ProjectReference Include="..\LogViewer2026.Core\LogViewer2026.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Logger2026_1.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>

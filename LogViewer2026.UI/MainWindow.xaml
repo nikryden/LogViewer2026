@@ -12,7 +12,7 @@
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
         AllowsTransparency="True"
-        Background="Transparent">
+        Background="Transparent" Icon="/Logger2026_1.ico">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="5"
@@ -69,9 +69,14 @@
             </StackPanel>
 
             <!-- Title -->
+            <Image Source="/Logger2026_1.ico" 
+                   Width="16" 
+                   Height="16" 
+                   Margin="10,0,5,0"
+                   VerticalAlignment="Center"/>
             <TextBlock Text="LogViewer2026 - High-Performance Serilog Log Viewer"
                        VerticalAlignment="Center"
-                       Margin="10,0"
+                       Margin="0"
                        Foreground="{DynamicResource PrimaryTextBrush}"
                        FontSize="12"/>
         </DockPanel>
