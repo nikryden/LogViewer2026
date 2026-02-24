@@ -12,7 +12,7 @@
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
         AllowsTransparency="True"
-        Background="Transparent" Icon="/svgviewer-output2.ico">
+        Background="Transparent" Icon="/LogViewer2026_v2.png">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="5"
@@ -23,8 +23,9 @@
 
     <Border Background="{DynamicResource WindowBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
+            CornerRadius="10"            
             BorderThickness="1">
-        <Grid x:Name="MainGrid">
+        <Grid x:Name="MainGrid" Margin="2">
             <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -37,7 +38,7 @@
            
         <!-- Custom Title Bar -->
         <DockPanel Grid.Row="0" 
-                   Background="{DynamicResource MenuBackgroundBrush}"
+                   Background="{DynamicResource WindowBackgroundBrush}"
                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
                    Height="30">
             <!-- Window Control Buttons -->
@@ -69,7 +70,7 @@
             </StackPanel>
 
             <!-- Title -->
-            <Image Source="/svgviewer-output.png" 
+            <Image Source="/LogViewer2026_v2.png" 
                    Width="32" 
                    Height="32" 
                    Margin="10,0,5,0"
@@ -83,8 +84,9 @@
 
         <!-- Menu Bar -->
         <Menu Grid.Row="1" 
-              Background="{DynamicResource MenuBackgroundBrush}" 
-              Foreground="{DynamicResource PrimaryTextBrush}">
+              Background="{DynamicResource WindowBackgroundBrush}" 
+              Foreground="{DynamicResource PrimaryTextBrush}"
+              Padding="10,0">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}">
                     <MenuItem.Icon>
@@ -185,7 +187,7 @@
         </Menu>
 
         <!-- Toolbar -->
-        <ToolBar Grid.Row="2" ToolBarTray.IsLocked="True">
+        <ToolBar Grid.Row="2" ToolBarTray.IsLocked="True" Padding="10,0">
             <Button Command="{Binding OpenFileCommand}" ToolTip="Open Log File">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="📂" FontSize="16" Margin="0,0,5,0"/>

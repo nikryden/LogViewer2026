@@ -14,8 +14,16 @@
     <PublishSingleFile>true</PublishSingleFile>
     <PublishReadyToRun>true</PublishReadyToRun>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <ApplicationIcon>Images\svgviewer-output2.ico</ApplicationIcon>
+    <ApplicationIcon>Images\LogViewer2026_v2.1.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="LogViewer2026_v2.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Images\LogViewer2026_v2.1.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
@@ -37,6 +45,7 @@
     <Resource Include="Logger2026_1.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="LogViewer2026_v2.png" />
     <Resource Include="svgviewer-output.png" />
     <Resource Include="svgviewer-output2.ico" />
   </ItemGroup>
