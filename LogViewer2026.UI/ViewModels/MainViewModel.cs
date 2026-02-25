@@ -32,6 +32,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private int _cachedContextLines = 5; // Cache the setting
     private List<int> _originalLineOffsets = new(); // Pre-built line start offsets for O(1) access
 
+    // File monitoring
+    private readonly List<FileSystemWatcher> _fileWatchers = [];
+    private readonly List<string> _loadedFilePaths = [];
+    private string? _loadedFolderPath;
+    private readonly System.Threading.Timer? _debounceTimer;
+    private bool _fileChangesPending;
+
     [ObservableProperty]
     private ObservableCollection<LogEntry> _logEntries = [];
 
@@ -158,6 +165,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _filterSearchResults = false;
 
     [ObservableProperty]
+    private bool _filesHaveChanged = false;
+
+    [ObservableProperty]
     private bool _showLookingGlass = true;
 
     [ObservableProperty]
@@ -203,6 +213,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         // Initialize to "All"
         SelectedLogLevelOption = AvailableLogLevels.First();
+
+        // Initialize debounce timer for file changes
+        _debounceTimer = new System.Threading.Timer(
+            _ => OnFileChangeDebounced(),
+            null,
+            System.Threading.Timeout.Infinite,
+            System.Threading.Timeout.Infinite);
 
         // Load settings cache
         _ = LoadSettingsCacheAsync();
@@ -438,6 +455,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SelectedDisplayFile = null;
             ShowSelectedFileOnly = false;
             _activeFileText = null;
+
+            // Setup file monitoring
+            _loadedFilePaths.Clear();
+            _loadedFilePaths.Add(filePath);
+            _loadedFolderPath = null;
+            SetupFileWatchers();
         }
         catch (Exception ex)
         {
@@ -883,6 +906,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SelectedDisplayFile = null;
             ShowSelectedFileOnly = false;
             _activeFileText = null;
+
+            // Setup file monitoring
+            _loadedFilePaths.Clear();
+            _loadedFilePaths.AddRange(filePaths);
+            _loadedFolderPath = null;
+            SetupFileWatchers();
         }
         catch (Exception ex)
         {
@@ -943,6 +972,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SelectedDisplayFile = null;
             ShowSelectedFileOnly = false;
             _activeFileText = null;
+
+            // Setup file monitoring
+            _loadedFilePaths.Clear();
+            _loadedFilePaths.AddRange(loadedFiles);
+            _loadedFolderPath = folderPath;
+            SetupFileWatchers();
         }
         catch (Exception ex)
         {
@@ -1129,8 +1164,165 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void SetupFileWatchers()
+    {
+        // Clear existing watchers
+        DisposeFileWatchers();
+        FilesHaveChanged = false;
+
+        if (_loadedFilePaths.Count == 0)
+            return;
+
+        // Group files by directory
+        var filesByDirectory = _loadedFilePaths
+            .GroupBy(f => Path.GetDirectoryName(f) ?? string.Empty)
+            .ToList();
+
+        foreach (var dirGroup in filesByDirectory)
+        {
+            try
+            {
+                var watcher = new FileSystemWatcher(dirGroup.Key)
+                {
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
+                    EnableRaisingEvents = true
+                };
+
+                // Watch specific files in this directory
+                foreach (var file in dirGroup)
+                {
+                    var fileName = Path.GetFileName(file);
+                    // Note: FileSystemWatcher doesn't support watching specific files,
+                    // so we'll filter in the event handler
+                }
+
+                watcher.Changed += OnFileChanged;
+                watcher.Created += OnFileChanged;
+                watcher.Deleted += OnFileChanged;
+                watcher.Renamed += OnFileRenamed;
+
+                _fileWatchers.Add(watcher);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to setup file watcher for {dirGroup.Key}: {ex.Message}");
+            }
+        }
+    }
+
+    private void OnFileChanged(object sender, FileSystemEventArgs e)
+    {
+        // Check if the changed file is one we're monitoring
+        if (!_loadedFilePaths.Any(f => string.Equals(f, e.FullPath, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        // Debounce the file change notification (files can trigger multiple events)
+        _fileChangesPending = true;
+        _debounceTimer?.Change(500, System.Threading.Timeout.Infinite); // 500ms debounce
+    }
+
+    private void OnFileRenamed(object sender, RenamedEventArgs e)
+    {
+        // Check if the renamed file is one we're monitoring
+        if (_loadedFilePaths.Any(f => string.Equals(f, e.OldFullPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            _fileChangesPending = true;
+            _debounceTimer?.Change(500, System.Threading.Timeout.Infinite);
+        }
+    }
+
+    private void OnFileChangeDebounced()
+    {
+        if (!_fileChangesPending)
+            return;
+
+        _fileChangesPending = false;
+        WpfApp.Current.Dispatcher.Invoke(() =>
+        {
+            FilesHaveChanged = true;
+        });
+    }
+
+    [RelayCommand]
+    private async Task ReloadFilesAsync()
+    {
+        FilesHaveChanged = false;
+
+        if (_loadedFilePaths.Count == 0)
+            return;
+
+        // Save current state
+        var savedFilterLevel = FilterLevel;
+        var savedFilterStartTime = FilterStartTime;
+        var savedFilterEndTime = FilterEndTime;
+        var savedSearchText = SearchText;
+        var savedFilterSearchResults = FilterSearchResults;
+        var savedShowSelectedFileOnly = ShowSelectedFileOnly;
+        var savedSelectedDisplayFile = SelectedDisplayFile;
+        var savedCurrentLine = CurrentLine;
+        var savedSelectedText = SelectedText;
+
+        // Reload based on what was loaded originally
+        if (!string.IsNullOrEmpty(_loadedFolderPath))
+        {
+            await LoadFolderAsync(_loadedFolderPath);
+        }
+        else if (_loadedFilePaths.Count == 1)
+        {
+            await LoadFileAsync(_loadedFilePaths[0]);
+        }
+        else
+        {
+            await LoadMultipleFilesAsync(_loadedFilePaths.ToArray());
+        }
+
+        // Restore state after reload
+        FilterLevel = savedFilterLevel;
+        FilterStartTime = savedFilterStartTime;
+        FilterEndTime = savedFilterEndTime;
+        SearchText = savedSearchText;
+        FilterSearchResults = savedFilterSearchResults;
+        ShowSelectedFileOnly = savedShowSelectedFileOnly;
+        SelectedDisplayFile = savedSelectedDisplayFile;
+
+        // Reapply filters if any were active
+        if (FilterLevel != null || FilterStartTime.HasValue || FilterEndTime.HasValue)
+        {
+            await ApplyFilterAsync();
+        }
+        else if (FilterSearchResults && !string.IsNullOrEmpty(SearchText))
+        {
+            ApplySearchFilter();
+        }
+
+        // Try to restore scroll position to the same line
+        if (!string.IsNullOrEmpty(savedCurrentLine))
+        {
+            // Use a small delay to ensure the UI has updated
+            await Task.Delay(100);
+            OnScrollToLine?.Invoke(savedCurrentLine, savedSelectedText ?? string.Empty);
+        }
+
+        StatusText = "Files reloaded successfully";
+    }
+
+    private void DisposeFileWatchers()
+    {
+        foreach (var watcher in _fileWatchers)
+        {
+            watcher.Changed -= OnFileChanged;
+            watcher.Created -= OnFileChanged;
+            watcher.Deleted -= OnFileChanged;
+            watcher.Renamed -= OnFileRenamed;
+            watcher.Dispose();
+        }
+        _fileWatchers.Clear();
+    }
+
     public void Dispose()
     {
+        DisposeFileWatchers();
+        _debounceTimer?.Dispose();
         _logService.Dispose();
         _multiFileLogService?.Dispose();
     }

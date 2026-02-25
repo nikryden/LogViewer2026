@@ -63,8 +63,8 @@
                                 <ColumnDefinition Width="13"/>
                             </Grid.ColumnDefinitions>
                             <!-- Icon column background -->
-                            <Border Grid.Column="0" 
-                                   Background="#2B2B2E"
+                            <Border Grid.Column="0"
+                                  
                                    Margin="0"/>
                             <ContentPresenter Name="Icon" 
                                             Grid.Column="0"

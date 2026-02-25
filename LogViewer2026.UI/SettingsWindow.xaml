@@ -88,7 +88,7 @@
             </TabItem>
 
             <!-- Serilog Settings -->
-            <TabItem Header="Serilog">
+            <TabItem Header="Log" Visibility="Collapsed">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="10">
                         <GroupBox Header="Log Format" Margin="0,0,0,15">
@@ -155,14 +155,12 @@
             <TabItem Header="About">
                 <StackPanel Margin="20">
                     <TextBlock Text="LogViewer2026" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
-					<Image Source="/svgviewer-output.png" Width="128" Height="128" Margin="0,0,0,10"/>
-                    <TextBlock Text="High-Performance Log Viewer" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,20"/>
-                    
+					<Image Source="/LogViewer2026_v2.png" Width="128" Height="128" Margin="0,0,0,10"/>
+                    <TextBlock Text="High-Performance open source Log Viewer" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
+                    <TextBlock Text="Athour Niklas Rydén" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
                     <Separator Margin="0,0,0,20"/>
                     
-                    <TextBlock Text="Version: 1.0.0" Margin="0,0,0,5"/>
-                    <TextBlock Text="Framework: .NET 10" Margin="0,0,0,5"/>
-                    <TextBlock Text="Platform: Windows 10/11" Margin="0,0,0,20"/>
+                 
                     
                     <Separator Margin="0,0,0,20"/>
                     
@@ -173,7 +171,7 @@
                              TextWrapping="Wrap"
                              Margin="0,0,0,20"/>
                     
-                    <TextBlock Text="© 2024 LogViewer2026. Built with WPF and .NET 10." 
+                    <TextBlock Text="© 2026 LogViewer2026" 
                                FontStyle="Italic" 
                                Foreground="{DynamicResource SecondaryTextBrush}"
                                TextWrapping="Wrap"/>

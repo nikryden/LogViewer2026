@@ -12,7 +12,7 @@
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
         AllowsTransparency="True"
-        Background="Transparent" Icon="/svgviewer-output2.ico">
+        Background="Transparent" Icon="/LogViewer2026_v2.png">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="5"
@@ -21,10 +21,16 @@
                       UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
 
+    <Window.InputBindings>
+        <KeyBinding Key="R" Modifiers="Control" Command="{Binding ClearFiltersCommand}"/>
+        <KeyBinding Key="R" Modifiers="Control+Shift" Command="{Binding ReloadFilesCommand}"/>
+    </Window.InputBindings>
+
     <Border Background="{DynamicResource WindowBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
+            CornerRadius="10"            
             BorderThickness="1">
-        <Grid x:Name="MainGrid">
+        <Grid x:Name="MainGrid" Margin="2">
             <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -37,7 +43,7 @@
            
         <!-- Custom Title Bar -->
         <DockPanel Grid.Row="0" 
-                   Background="{DynamicResource MenuBackgroundBrush}"
+                   Background="{DynamicResource WindowBackgroundBrush}"
                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
                    Height="30">
             <!-- Window Control Buttons -->
@@ -69,7 +75,7 @@
             </StackPanel>
 
             <!-- Title -->
-            <Image Source="/svgviewer-output.png" 
+            <Image Source="/LogViewer2026_v2.png" 
                    Width="32" 
                    Height="32" 
                    Margin="10,0,5,0"
@@ -83,8 +89,9 @@
 
         <!-- Menu Bar -->
         <Menu Grid.Row="1" 
-              Background="{DynamicResource MenuBackgroundBrush}" 
-              Foreground="{DynamicResource PrimaryTextBrush}">
+              Background="{DynamicResource WindowBackgroundBrush}" 
+              Foreground="{DynamicResource PrimaryTextBrush}"
+              Padding="10,0">
             <MenuItem Header="_File">
                 <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}">
                     <MenuItem.Icon>
@@ -99,6 +106,12 @@
                 <MenuItem Header="Open _Folder..." Command="{Binding OpenFolderCommand}">
                     <MenuItem.Icon>
                         <TextBlock Text="📂" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Reload Files" Command="{Binding ReloadFilesCommand}" InputGestureText="Ctrl+Shift+R">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔄" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
@@ -156,7 +169,7 @@
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}">
+                <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}" InputGestureText="Ctrl+R">
                     <MenuItem.Icon>
                         <TextBlock Text="🔄" FontSize="14"/>
                     </MenuItem.Icon>
@@ -185,7 +198,7 @@
         </Menu>
 
         <!-- Toolbar -->
-        <ToolBar Grid.Row="2" ToolBarTray.IsLocked="True">
+        <ToolBar Grid.Row="2" ToolBarTray.IsLocked="True" Padding="10,0">
             <Button Command="{Binding OpenFileCommand}" ToolTip="Open Log File">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="📂" FontSize="16" Margin="0,0,5,0"/>
@@ -252,6 +265,19 @@
                     Content="Clear Filters" 
                     Margin="5,0"
                     ToolTip="Clear all active filters"/>
+
+            <Separator/>
+
+            <Button Command="{Binding ReloadFilesCommand}"
+                    ToolTip="Reload Files (Ctrl+Shift+R)"
+                    Padding="8,5"
+                    Margin="5,0"
+                    Visibility="{Binding FilesHaveChanged, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🔄" FontSize="16" Margin="0,0,5,0"/>
+                    <TextBlock Text="Reload" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Button>
 
             <Separator Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <TextBlock Text="Go to file:" 
@@ -484,6 +510,21 @@
             <Separator/>
             <StatusBarItem>
                 <TextBlock Text="{Binding LoadedFilesInfo}"/>
+            </StatusBarItem>
+            <Separator Visibility="{Binding FilesHaveChanged, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            <StatusBarItem Visibility="{Binding FilesHaveChanged, Converter={StaticResource BoolToVisibilityConverter}}" HorizontalAlignment="Right">
+                <Button Command="{Binding ReloadFilesCommand}"
+                        Background="#FFF4C430"
+                        BorderBrush="#FFD4A017"
+                        BorderThickness="1"
+                        Padding="8,2"
+                        Cursor="Hand"
+                        ToolTip="Files have been updated! Click to reload (Ctrl+Shift+R)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚠️" FontSize="14" Margin="0,0,5,0"/>
+                        <TextBlock Text="Files Updated - Click to Reload" FontWeight="SemiBold" Foreground="#FF333333"/>
+                    </StackPanel>
+                </Button>
             </StatusBarItem>
         </StatusBar>
     </Grid>
