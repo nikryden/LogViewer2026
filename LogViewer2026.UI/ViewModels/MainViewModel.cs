@@ -30,6 +30,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _isMultiFileMode;
 #pragma warning restore CS0414
     private int _cachedContextLines = 5; // Cache the setting
+    private bool _cachedReloadToLastRow = false; // Cache the reload behavior setting
+    private bool _cachedUseRegexSearch = false; // Cache the regex search setting
+    private System.Text.RegularExpressions.Regex? _cachedRegex; // Cache compiled regex for ApplySearchFilter
+    private string _cachedRegexPattern = string.Empty; // Track pattern for cache invalidation
     private List<int> _originalLineOffsets = new(); // Pre-built line start offsets for O(1) access
 
     // File monitoring
@@ -171,6 +175,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _showLookingGlass = true;
 
     [ObservableProperty]
+    private bool _useRegexSearch = false;
+
+    [ObservableProperty]
     private LogLevelOption? _selectedLogLevelOption;
 
     public IEnumerable<LogLevelOption> AvailableLogLevels { get; } = new[]
@@ -236,6 +243,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AutoUpdateLookingGlass = settings.AutoUpdateLookingGlass;
             FilterSearchResults = settings.FilterSearchResults;
             ShowLookingGlass = settings.ShowLookingGlass;
+            _cachedReloadToLastRow = settings.ReloadToLastRow;
+            _cachedUseRegexSearch = settings.UseRegexSearch;
+            UseRegexSearch = settings.UseRegexSearch;
         }
         catch
         {
@@ -243,6 +253,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             AutoUpdateLookingGlass = false; // Default
             FilterSearchResults = false; // Default
             ShowLookingGlass = true; // Default
+            _cachedReloadToLastRow = false; // Default
+            _cachedUseRegexSearch = false; // Default
+            UseRegexSearch = false; // Default
         }
     }
 
@@ -254,6 +267,27 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnOriginalLogTextChanged(string value)
     {
         BuildLineIndex(value);
+    }
+
+    partial void OnUseRegexSearchChanged(bool value)
+    {
+        _cachedUseRegexSearch = value;
+        OnRegexSearchModeChanged?.Invoke(value);
+
+        // Save the setting
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var settings = await _settingsService.LoadAsync();
+                settings.UseRegexSearch = value;
+                await _settingsService.SaveAsync(settings);
+            }
+            catch
+            {
+                // Ignore errors
+            }
+        });
     }
 
     private void BuildLineIndex(string text)
@@ -365,46 +399,128 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             }
             // Note: Don't reapply level filter here to avoid recursion
             // The level filter is already applied if FilterLevel is set
+
+            // Clear cached regex when search is cleared
+            _cachedRegex = null;
+            _cachedRegexPattern = string.Empty;
             return;
         }
 
-        // Single-pass: apply both level and search filters without Split/Join
         var text = _activeFileText ?? OriginalLogText;
-        var sb = new System.Text.StringBuilder();
-        int filteredCount = 0;
-        int lineStart = 0;
-        var searchSpan = SearchText.AsSpan();
 
-        for (int i = 0; i <= text.Length; i++)
+        // Early exit if text is empty
+        if (string.IsNullOrEmpty(text))
         {
-            if (i == text.Length || text[i] == '\n')
+            StatusText = "No content to filter";
+            return;
+        }
+
+        var sb = new System.Text.StringBuilder(text.Length / 2); // Pre-allocate reasonable capacity
+        int filteredCount = 0;
+
+        if (_cachedUseRegexSearch)
+        {
+            // Use cached compiled regex for better performance
+            try
             {
-                var lineSpan = text.AsSpan(lineStart, i - lineStart);
-
-                bool passesLevel = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
-                bool passesSearch = lineSpan.Contains(searchSpan, StringComparison.OrdinalIgnoreCase);
-
-                if (passesLevel && passesSearch)
+                // Check if we can reuse cached regex
+                if (_cachedRegex == null || _cachedRegexPattern != SearchText)
                 {
-                    if (sb.Length > 0) sb.Append('\n');
-                    sb.Append(lineSpan);
-                    filteredCount++;
+                    // Compile new regex with optimizations
+                    _cachedRegex = new System.Text.RegularExpressions.Regex(
+                        SearchText, 
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase | 
+                        System.Text.RegularExpressions.RegexOptions.Compiled | 
+                        System.Text.RegularExpressions.RegexOptions.CultureInvariant,
+                        TimeSpan.FromSeconds(2));
+                    _cachedRegexPattern = SearchText;
                 }
 
-                lineStart = i + 1;
+                int lineStart = 0;
+                var textSpan = text.AsSpan();
+
+                for (int i = 0; i <= textSpan.Length; i++)
+                {
+                    if (i == textSpan.Length || textSpan[i] == '\n')
+                    {
+                        var lineSpan = textSpan.Slice(lineStart, i - lineStart);
+
+                        bool passesLevel = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
+
+                        // Only check regex if level filter passes (short-circuit evaluation)
+                        bool passesSearch = false;
+                        if (passesLevel)
+                        {
+                            // Convert span to string only when necessary
+                            var lineString = lineSpan.ToString();
+                            passesSearch = _cachedRegex.IsMatch(lineString);
+                        }
+
+                        if (passesLevel && passesSearch)
+                        {
+                            if (sb.Length > 0) sb.Append('\n');
+                            sb.Append(lineSpan);
+                            filteredCount++;
+                        }
+
+                        lineStart = i + 1;
+                    }
+                }
+            }
+            catch (System.Text.RegularExpressions.RegexParseException ex)
+            {
+                StatusText = $"Invalid regex pattern: {ex.Message}";
+                _cachedRegex = null;
+                _cachedRegexPattern = string.Empty;
+                return;
+            }
+            catch (System.Text.RegularExpressions.RegexMatchTimeoutException)
+            {
+                StatusText = "Regex search timed out (pattern too complex)";
+                return;
+            }
+        }
+        else
+        {
+            // Optimized span-based literal search
+            int lineStart = 0;
+            var textSpan = text.AsSpan();
+            var searchSpan = SearchText.AsSpan();
+
+            for (int i = 0; i <= textSpan.Length; i++)
+            {
+                if (i == textSpan.Length || textSpan[i] == '\n')
+                {
+                    var lineSpan = textSpan.Slice(lineStart, i - lineStart);
+
+                    bool passesLevel = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
+
+                    // Only check search if level filter passes (short-circuit evaluation)
+                    bool passesSearch = passesLevel && lineSpan.Contains(searchSpan, StringComparison.OrdinalIgnoreCase);
+
+                    if (passesLevel && passesSearch)
+                    {
+                        if (sb.Length > 0) sb.Append('\n');
+                        sb.Append(lineSpan);
+                        filteredCount++;
+                    }
+
+                    lineStart = i + 1;
+                }
             }
         }
 
         LogText = sb.ToString();
 
         // Update status to show both filters if applicable
+        var searchMode = _cachedUseRegexSearch ? "regex" : "text";
         if (FilterLevel == null)
         {
-            StatusText = $"Showing {filteredCount:N0} lines matching '{SearchText}'";
+            StatusText = $"Showing {filteredCount:N0} lines matching {searchMode} '{SearchText}'";
         }
         else
         {
-            StatusText = $"Showing {filteredCount:N0} lines with level {FilterLevel} matching '{SearchText}'";
+            StatusText = $"Showing {filteredCount:N0} lines with level {FilterLevel} matching {searchMode} '{SearchText}'";
         }
     }
 
@@ -518,6 +634,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public event Action<int>? OnSearchResultChanged;
     public event Action<string, string>? OnScrollToLine; // lineContent, selectedText
+    public event Action? OnScrollToEnd; // Scroll to the last line
+    public event Action<bool>? OnRegexSearchModeChanged; // Notify UI when regex mode changes
 
     [RelayCommand]
     private async Task ApplyFilterAsync()
@@ -1295,11 +1413,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             ApplySearchFilter();
         }
 
-        // Try to restore scroll position to the same line
-        if (!string.IsNullOrEmpty(savedCurrentLine))
+        // Use a small delay to ensure the UI has updated
+        await Task.Delay(100);
+
+        // Scroll based on user preference
+        if (_cachedReloadToLastRow)
         {
-            // Use a small delay to ensure the UI has updated
-            await Task.Delay(100);
+            // Scroll to the last row
+            OnScrollToEnd?.Invoke();
+        }
+        else if (!string.IsNullOrEmpty(savedCurrentLine))
+        {
+            // Try to restore scroll position to the same line
             OnScrollToLine?.Invoke(savedCurrentLine, savedSelectedText ?? string.Empty);
         }
 

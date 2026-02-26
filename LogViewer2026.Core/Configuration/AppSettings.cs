@@ -17,4 +17,6 @@ public sealed class AppSettings
     public bool AutoUpdateLookingGlass { get; set; } = false;
     public bool FilterSearchResults { get; set; } = false;
     public bool ShowLookingGlass { get; set; } = true;
+    public bool ReloadToLastRow { get; set; } = false;
+    public bool UseRegexSearch { get; set; } = false;
 }

@@ -34,6 +34,8 @@ public class SettingsServiceTests : IDisposable
         settings.AutoUpdateLookingGlass.Should().BeFalse();
         settings.ShowLookingGlass.Should().BeTrue();
         settings.FilterSearchResults.Should().BeFalse();
+        settings.ReloadToLastRow.Should().BeFalse();
+        settings.UseRegexSearch.Should().BeFalse();
     }
 
     [Fact]
@@ -47,7 +49,9 @@ public class SettingsServiceTests : IDisposable
             ShowLookingGlass = false,
             FilterSearchResults = true,
             Theme = "Dark",
-            CacheSize = 20000
+            CacheSize = 20000,
+            ReloadToLastRow = true,
+            UseRegexSearch = true
         };
 
         await service.SaveAsync(settings);
@@ -59,6 +63,8 @@ public class SettingsServiceTests : IDisposable
         loaded.FilterSearchResults.Should().BeTrue();
         loaded.Theme.Should().Be("Dark");
         loaded.CacheSize.Should().Be(20000);
+        loaded.ReloadToLastRow.Should().BeTrue();
+        loaded.UseRegexSearch.Should().BeTrue();
     }
 
     [Fact]

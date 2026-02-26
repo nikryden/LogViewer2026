@@ -53,6 +53,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     private bool _showLookingGlass = true;
 
     [ObservableProperty]
+    private bool _reloadToLastRow = false;
+
+    [ObservableProperty]
+    private bool _useRegexSearch = false;
+
+    [ObservableProperty]
     private string _settingsPath = string.Empty;
 
     public SettingsViewModel(ISettingsService settingsService)
@@ -78,6 +84,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         AutoUpdateLookingGlass = settings.AutoUpdateLookingGlass;
         FilterSearchResults = settings.FilterSearchResults;
         ShowLookingGlass = settings.ShowLookingGlass;
+        ReloadToLastRow = settings.ReloadToLastRow;
+        UseRegexSearch = settings.UseRegexSearch;
     }
 
     [RelayCommand]
@@ -97,7 +105,9 @@ public sealed partial class SettingsViewModel : ObservableObject
             LookingGlassContextLines = LookingGlassContextLines,
             AutoUpdateLookingGlass = AutoUpdateLookingGlass,
             FilterSearchResults = FilterSearchResults,
-            ShowLookingGlass = ShowLookingGlass
+            ShowLookingGlass = ShowLookingGlass,
+            ReloadToLastRow = ReloadToLastRow,
+            UseRegexSearch = UseRegexSearch
         };
 
         await _settingsService.SaveAsync(settings);

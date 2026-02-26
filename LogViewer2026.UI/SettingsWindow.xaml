@@ -69,6 +69,24 @@
                                            Foreground="{DynamicResource SecondaryTextBrush}"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Reload to last row" 
+                                          IsChecked="{Binding ReloadToLastRow}" 
+                                          Margin="0,5,0,5"/>
+                                <TextBlock Text="When reloading files, scroll to the last row instead of staying at the selected row" 
+                                           FontStyle="Italic" 
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Use regular expressions in search" 
+                                          IsChecked="{Binding UseRegexSearch}" 
+                                          Margin="0,5,0,5"/>
+                                <TextBlock Text="Enable regex pattern matching in search (e.g., '^ERROR.*timeout$')" 
+                                           FontStyle="Italic" 
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10"/>
                             </StackPanel>
                         </GroupBox>
 
@@ -153,32 +171,29 @@
 
             <!-- About -->
             <TabItem Header="About">
-                <StackPanel Margin="20">
-                    <TextBlock Text="LogViewer2026" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
-					<Image Source="/LogViewer2026_v2.png" Width="128" Height="128" Margin="0,0,0,10"/>
-                    <TextBlock Text="High-Performance open source Log Viewer" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
-					<TextBlock Text="Athour Niklas Rydén" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
-					<TextBlock>
-						<Run Text="🐙" FontSize="16"/> GitHub: <Hyperlink NavigateUri="https://github.com/niklasryden/LogViewer2026" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/niklasryden/LogViewer2026</Hyperlink>
-					</TextBlock>
-					<Separator Margin="0,0,0,20"/>
+				<ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="LogViewer2026" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+					    <Image Source="/LogViewer2026_v2.png" Width="128" Height="128" Margin="0,0,0,10"/>
+                        <TextBlock Text="High-Performance open source Log Viewer" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
+					    <TextBlock Text="Athour Niklas Rydén" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
+					    <TextBlock>
+						    <Run Text="🐙" FontSize="16"/> GitHub: <Hyperlink NavigateUri="https://github.com/nikryden/LogViewer2026" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/nikryden/LogViewer2026</Hyperlink>
+					    </TextBlock>                    
+                        <Separator Margin="0,0,0,20"/>                    
+                        <Label Content="Settings Location:" FontWeight="Bold"/>
+                        <TextBox Text="{Binding SettingsPath, Mode=OneWay}" 
+                                 IsReadOnly="True" 
+                                 Background="{DynamicResource ControlBackgroundBrush}"
+                                 TextWrapping="Wrap"
+                                 Margin="0,0,0,20"/>
                     
-                 
-                    
-                    <Separator Margin="0,0,0,20"/>
-                    
-                    <Label Content="Settings Location:" FontWeight="Bold"/>
-                    <TextBox Text="{Binding SettingsPath, Mode=OneWay}" 
-                             IsReadOnly="True" 
-                             Background="{DynamicResource ControlBackgroundBrush}"
-                             TextWrapping="Wrap"
-                             Margin="0,0,0,20"/>
-                    
-                    <TextBlock Text="© 2026 LogViewer2026" 
-                               FontStyle="Italic" 
-                               Foreground="{DynamicResource SecondaryTextBrush}"
-                               TextWrapping="Wrap"/>
-                </StackPanel>
+                        <TextBlock Text="© 2026 LogViewer2026" 
+                                   FontStyle="Italic" 
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+				</ScrollViewer>
             </TabItem>
         </TabControl>
 

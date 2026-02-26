@@ -216,7 +216,15 @@
                      x:Name="SearchBox"
                      Foreground="{DynamicResource PrimaryTextBrush}"
                      Background="{DynamicResource ControlBackgroundBrush}"
-                     CaretBrush="{DynamicResource PrimaryTextBrush}"/>
+                     CaretBrush="{DynamicResource PrimaryTextBrush}"
+                     KeyDown="SearchBox_KeyDown"/>
+            <Button Click="ExecuteSearch_Click" 
+                    Content="🔍" 
+                    ToolTip="Execute Search (Enter)"
+                    Width="30"
+                    Margin="2,0"
+                    FontSize="14"
+                    x:Name="SearchButton"/>
             <Button Click="ClearSearch_Click" 
                     Content="✖" 
                     ToolTip="Clear Search"
@@ -242,6 +250,11 @@
                 <Run Text="/"/>
                 <Run Text="{Binding TotalSearchResults, Mode=OneWay}"/>
             </TextBlock>
+            <CheckBox Content="Regex" 
+                      IsChecked="{Binding UseRegexSearch}"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      ToolTip="Use regular expressions (e.g., '^ERROR.*timeout$')"/>
             <CheckBox Content="Filter to results" 
                       IsChecked="{Binding FilterSearchResults}"
                       VerticalAlignment="Center"
