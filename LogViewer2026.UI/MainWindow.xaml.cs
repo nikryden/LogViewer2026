@@ -51,6 +51,29 @@ public partial class MainWindow : Window
         // Handle scroll to line (for preserving position after filter)
         _viewModel.OnScrollToLine += ScrollToLine;
 
+        // Handle scroll to end (for reload to last row)
+        _viewModel.OnScrollToEnd += ScrollToEnd;
+
+        // Handle regex search mode change
+        _viewModel.OnRegexSearchModeChanged += (useRegex) =>
+        {
+            _searchHighlighter.UseRegex = useRegex;
+
+            // If there's search text and we're switching TO regex mode, don't auto-execute
+            // User will need to click search button or press Enter
+            // If switching FROM regex to normal, auto-execute the search
+            if (!useRegex && !string.IsNullOrEmpty(_viewModel.SearchText))
+            {
+                UpdateSearchHighlighting();
+                if (_viewModel.FilterSearchResults)
+                {
+                    _viewModel.ApplySearchFilter();
+                }
+            }
+
+            LogEditor.TextArea.TextView.Redraw();
+        };
+
         // Handle editor actions
         _viewModel.OnSelectWholeLineRequested += SelectWholeLine;
         _viewModel.OnSelectAllRequested += SelectAll;
@@ -175,6 +198,30 @@ public partial class MainWindow : Window
         }
         else if (e.PropertyName == nameof(MainViewModel.SearchText))
         {
+            // Only auto-update search if NOT using regex mode
+            // In regex mode, user must click the search button or press Enter
+            if (_viewModel.UseRegexSearch)
+            {
+                // Don't auto-update in regex mode, just clear if empty
+                if (string.IsNullOrEmpty(_viewModel.SearchText))
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        _searchHighlighter.SearchTerm = string.Empty;
+                        _viewModel.TotalSearchResults = 0;
+                        _viewModel.CurrentSearchResultIndex = -1;
+                        LogEditor.TextArea.TextView.Redraw();
+
+                        if (_viewModel.FilterSearchResults)
+                        {
+                            _viewModel.ApplySearchFilter();
+                        }
+                    });
+                }
+                return;
+            }
+
+            // Normal text search - auto-update
             Dispatcher.Invoke(() =>
             {
                 if (string.IsNullOrEmpty(_viewModel.SearchText))
@@ -410,6 +457,24 @@ public partial class MainWindow : Window
             {
                 LogEditor.ScrollToHome();
             }
+        });
+    }
+
+    private void ScrollToEnd()
+    {
+        if (LogEditor.Document == null || LogEditor.Document.LineCount == 0)
+            return;
+
+        Dispatcher.Invoke(() =>
+        {
+            // Scroll to the last line
+            var lastLineNumber = LogEditor.Document.LineCount;
+            var lastLine = LogEditor.Document.GetLineByNumber(lastLineNumber);
+            LogEditor.ScrollTo(lastLineNumber, 0);
+            LogEditor.CaretOffset = lastLine.Offset;
+
+            // Update the status
+            _viewModel.StatusText += $" (Scrolled to last line {lastLineNumber})";
         });
     }
 
@@ -776,6 +841,48 @@ public partial class MainWindow : Window
             LogEditor.CaretOffset = index;
             LogEditor.ScrollTo(location.Line, 0);
         });
+    }
+
+    private void ExecuteSearch_Click(object sender, RoutedEventArgs e)
+    {
+        PerformSearch();
+    }
+
+    private void SearchBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            PerformSearch();
+            e.Handled = true;
+        }
+    }
+
+    private void PerformSearch()
+    {
+        if (string.IsNullOrEmpty(_viewModel.SearchText))
+        {
+            // Clear highlighting
+            _searchHighlighter.SearchTerm = string.Empty;
+            _viewModel.TotalSearchResults = 0;
+            _viewModel.CurrentSearchResultIndex = -1;
+            LogEditor.TextArea.TextView.Redraw();
+
+            // Clear search filter if enabled
+            if (_viewModel.FilterSearchResults)
+            {
+                _viewModel.ApplySearchFilter();
+            }
+        }
+        else
+        {
+            UpdateSearchHighlighting();
+
+            // Apply search filter if enabled
+            if (_viewModel.FilterSearchResults)
+            {
+                _viewModel.ApplySearchFilter();
+            }
+        }
     }
 
     private void ClearSearch_Click(object sender, RoutedEventArgs e)
