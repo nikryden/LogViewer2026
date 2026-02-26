@@ -157,8 +157,11 @@
                     <TextBlock Text="LogViewer2026" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
 					<Image Source="/LogViewer2026_v2.png" Width="128" Height="128" Margin="0,0,0,10"/>
                     <TextBlock Text="High-Performance open source Log Viewer" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
-                    <TextBlock Text="Athour Niklas Rydén" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
-                    <Separator Margin="0,0,0,20"/>
+					<TextBlock Text="Athour Niklas Rydén" FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
+					<TextBlock>
+						<Run Text="🐙" FontSize="16"/> GitHub: <Hyperlink NavigateUri="https://github.com/niklasryden/LogViewer2026" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/niklasryden/LogViewer2026</Hyperlink>
+					</TextBlock>
+					<Separator Margin="0,0,0,20"/>
                     
                  
                     
