@@ -85,117 +85,119 @@
                        Margin="0"
                        Foreground="{DynamicResource PrimaryTextBrush}"
                        FontSize="12"/>
-        </DockPanel>
+            <!-- Menu Bar -->
+            <Menu Grid.Row="1" 
+                Background="{DynamicResource WindowBackgroundBrush}" 
+                Foreground="{DynamicResource PrimaryTextBrush}"
+                Padding="10,0" Width="Auto" HorizontalAlignment="Left" Margin="10,2">
+                    <MenuItem Header="_File">
+                        <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📂" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📁" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Open _Folder..." Command="{Binding OpenFolderCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📂" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="_Reload Files" Command="{Binding ReloadFilesCommand}" InputGestureText="Ctrl+Shift+R">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🔄" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="_Settings..." Click="Settings_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Text="⚙️" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="E_xit" Click="Exit_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🚪" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="_Edit">
+                        <MenuItem Header="_Copy" Command="{Binding CopyToClipboardCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📋" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="_Filters">
+                    <MenuItem Header="_Save Current Filter..." Command="{Binding SaveFilterCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="💾" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                     <MenuItem Header="_Load Filter..." Command="{Binding LoadFilterCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📥" FontSize="14"/>
+                            </MenuItem.Icon>
+                     </MenuItem>
+                      <MenuItem Header="_Delete Filter..." Command="{Binding DeleteFilterCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🗑️" FontSize="14"/>
+                            </MenuItem.Icon>
+                      </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="_Export Filters..." Command="{Binding ExportFiltersCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📤" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="_Import Filters..." Command="{Binding ImportFiltersCommand}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📥" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="_View">
+                        <MenuItem Header="_Filter Settings..." Click="OpenFilterWindow_Click" InputGestureText="">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🔧" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}" InputGestureText="Ctrl+R">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🔄" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem x:Name="UndockLogEditorMenuItem" Header="Undock _Log Editor" Click="ToggleLogEditorDock_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Text="⬜" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="UndockLookingGlassMenuItem" Header="Undock Looking _Glass" Click="ToggleLookingGlassDock_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🔍" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Show Looking _Glass" 
+                        IsCheckable="True"
+                        IsChecked="{Binding ShowLookingGlass, Mode=TwoWay}"
+                        Click="ShowLookingGlass_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Text="👁️" FontSize="14"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+            </Menu>
 
-        <!-- Menu Bar -->
-        <Menu Grid.Row="1" 
-              Background="{DynamicResource WindowBackgroundBrush}" 
-              Foreground="{DynamicResource PrimaryTextBrush}"
-              Padding="10,0">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Open Log File..." Command="{Binding OpenFileCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📂" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Open _Multiple Files..." Command="{Binding OpenMultipleFilesCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📁" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Open _Folder..." Command="{Binding OpenFolderCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📂" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Reload Files" Command="{Binding ReloadFilesCommand}" InputGestureText="Ctrl+Shift+R">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🔄" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Settings..." Click="Settings_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="⚙️" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="E_xit" Click="Exit_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🚪" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-            </MenuItem>
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Copy" Command="{Binding CopyToClipboardCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📋" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-            </MenuItem>
-            <MenuItem Header="_Filters">
-                <MenuItem Header="_Save Current Filter..." Command="{Binding SaveFilterCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="💾" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="_Load Filter..." Command="{Binding LoadFilterCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📥" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="_Delete Filter..." Command="{Binding DeleteFilterCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🗑️" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Export Filters..." Command="{Binding ExportFiltersCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📤" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="_Import Filters..." Command="{Binding ImportFiltersCommand}">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📥" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-            </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem Header="_Filter Settings..." Click="OpenFilterWindow_Click" InputGestureText="">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🔧" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="_Refresh" Command="{Binding ClearFiltersCommand}" InputGestureText="Ctrl+R">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🔄" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem x:Name="UndockLogEditorMenuItem" Header="Undock _Log Editor" Click="ToggleLogEditorDock_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="⬜" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem x:Name="UndockLookingGlassMenuItem" Header="Undock Looking _Glass" Click="ToggleLookingGlassDock_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🔍" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Header="Show Looking _Glass" 
-                          IsCheckable="True"
-                          IsChecked="{Binding ShowLookingGlass, Mode=TwoWay}"
-                          Click="ShowLookingGlass_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="👁️" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-            </MenuItem>
-        </Menu>
+            </DockPanel>
+
+     
 
         <!-- Toolbar -->
         <ToolBar Grid.Row="2" ToolBarTray.IsLocked="True" Padding="10,0">
@@ -209,16 +211,38 @@
             <Separator/>
 
             <TextBlock Text="Search:" VerticalAlignment="Center" Margin="5,0"/>
-            <TextBox Width="200" 
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                     VerticalAlignment="Center" 
-                     Margin="5,0"
-                     x:Name="SearchBox"
-                     Foreground="{DynamicResource PrimaryTextBrush}"
-                     Background="{DynamicResource ControlBackgroundBrush}"
-                     CaretBrush="{DynamicResource PrimaryTextBrush}"
-                     KeyDown="SearchBox_KeyDown"/>
-            <Button Click="ExecuteSearch_Click" 
+            <Grid x:Name="SearchBoxContainer" VerticalAlignment="Center" Margin="5,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Width="200" 
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                         VerticalAlignment="Center" 
+                         x:Name="SearchBox"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
+                         Background="{DynamicResource ControlBackgroundBrush}"
+                         CaretBrush="{DynamicResource PrimaryTextBrush}"
+                         KeyDown="SearchBox_KeyDown"
+                         LostFocus="SearchBox_LostFocus"
+                         AcceptsReturn="False"
+                         TextWrapping="NoWrap"
+                         VerticalScrollBarVisibility="Hidden"/>
+                <ToggleButton Grid.Column="1"
+                              x:Name="SearchExpandButton"
+                              Content="▼"
+                              Width="20"
+                              Height="22"
+                              FontSize="8"
+                              Margin="2,0,0,0"
+                              VerticalAlignment="Center"
+                              ToolTip="Expand search box"
+                              Click="SearchExpandButton_Click"
+                              Background="{DynamicResource ControlBackgroundBrush}"
+                              Foreground="{DynamicResource PrimaryTextBrush}"/>
+            </Grid>
+            <Button Click="ExecuteSearch_Click"
                     Content="🔍" 
                     ToolTip="Execute Search (Enter)"
                     Width="30"
@@ -250,7 +274,7 @@
                 <Run Text="/"/>
                 <Run Text="{Binding TotalSearchResults, Mode=OneWay}"/>
             </TextBlock>
-            <CheckBox Content="Regex" 
+            <CheckBox Content="(.*)" 
                       IsChecked="{Binding UseRegexSearch}"
                       VerticalAlignment="Center"
                       Margin="5,0"
@@ -345,24 +369,25 @@
                                VerticalScrollBarVisibility="Auto"
                                Background="{DynamicResource EditorBackgroundBrush}"
                                Foreground="{DynamicResource EditorForegroundBrush}"
-                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
-                               ContextMenuOpening="LogEditor_ContextMenuOpening">
-                <avalon:TextEditor.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Copy" 
-                                  Command="{Binding CopyToClipboardCommand}"
-                                  InputGestureText="Ctrl+C">
-                            <MenuItem.Icon>
-                                <TextBlock Text="📋" FontSize="14"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Copy to Search" 
-                                  Command="{Binding CopyToSearchCommand}">
-                            <MenuItem.Icon>
-                                <TextBlock Text="🔍" FontSize="14"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <Separator/>
+                                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
+                                               ContextMenuOpening="LogEditor_ContextMenuOpening">
+                               <avalon:TextEditor.ContextMenu>
+                                   <ContextMenu>
+                                       <MenuItem Header="Copy" 
+                                                 Command="{Binding CopyToClipboardCommand}"
+                                                 InputGestureText="Ctrl+C">
+                                           <MenuItem.Icon>
+                                               <TextBlock Text="📋" FontSize="14"/>
+                                           </MenuItem.Icon>
+                                       </MenuItem>
+                                       <MenuItem Header="Copy to Search" 
+                                                 Command="{Binding CopyToSearchCommand}"
+                                                 InputGestureText="Ctrl+Shift+F">
+                                           <MenuItem.Icon>
+                                               <TextBlock Text="🔍" FontSize="14"/>
+                                           </MenuItem.Icon>
+                                       </MenuItem>
+                                       <Separator/>
                         <MenuItem Header="Select Whole Line" 
                                   Command="{Binding SelectWholeLineCommand}"
                                   InputGestureText="Ctrl+L">
@@ -456,24 +481,25 @@
                                VerticalScrollBarVisibility="Auto"
                                Background="{DynamicResource EditorBackgroundBrush}"
                                Foreground="{DynamicResource EditorForegroundBrush}"
-                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
-                               ContextMenuOpening="LogLookingGlas_ContextMenuOpening">
-                <avalon:TextEditor.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Copy" 
-                                  Command="{Binding CopyToClipboardCommand}"
-                                  InputGestureText="Ctrl+C">
-                            <MenuItem.Icon>
-                                <TextBlock Text="📋" FontSize="14"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Copy to Search" 
-                                  Command="{Binding CopyToSearchCommand}">
-                            <MenuItem.Icon>
-                                <TextBlock Text="🔍" FontSize="14"/>
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <Separator/>
+                                               LineNumbersForeground="{DynamicResource SecondaryTextBrush}"
+                                               ContextMenuOpening="LogLookingGlas_ContextMenuOpening">
+                               <avalon:TextEditor.ContextMenu>
+                                   <ContextMenu>
+                                       <MenuItem Header="Copy" 
+                                                 Command="{Binding CopyToClipboardCommand}"
+                                                 InputGestureText="Ctrl+C">
+                                           <MenuItem.Icon>
+                                               <TextBlock Text="📋" FontSize="14"/>
+                                           </MenuItem.Icon>
+                                       </MenuItem>
+                                       <MenuItem Header="Copy to Search" 
+                                                 Command="{Binding CopyToSearchCommand}"
+                                                 InputGestureText="Ctrl+Shift+F">
+                                           <MenuItem.Icon>
+                                               <TextBlock Text="🔍" FontSize="14"/>
+                                           </MenuItem.Icon>
+                                       </MenuItem>
+                                       <Separator/>
                         <MenuItem Header="Select Whole Line" 
                                   Command="{Binding SelectWholeLineCommand}"
                                   InputGestureText="Ctrl+L">
@@ -502,7 +528,10 @@
         </Grid>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="6">
+        <StatusBar Grid.Row="6"
+                   Background="Gray"
+                   Foreground="Black"
+                   >
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusText}"/>
             </StatusBarItem>

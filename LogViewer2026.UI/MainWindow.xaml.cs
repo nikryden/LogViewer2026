@@ -22,6 +22,9 @@ public partial class MainWindow : Window
     private FloatingPanelWindow? _logEditorFloatingWindow;
     private FloatingPanelWindow? _lookingGlassFloatingWindow;
     private System.Windows.Threading.DispatcherTimer? _selectionSyncTimer;
+    private bool _isSearchBoxExpanded = false;
+    private double _originalSearchBoxWidth = 200;
+    private double _originalSearchBoxHeight = 22;
 
     public MainWindow(MainViewModel viewModel)
     {
@@ -165,6 +168,10 @@ public partial class MainWindow : Window
         // Focus search box on Ctrl+F
         var findGesture = new KeyGesture(Key.F, ModifierKeys.Control);
         InputBindings.Add(new InputBinding(new RelayCommand(() => SearchBox.Focus()), findGesture));
+
+        // Copy to search on Ctrl+Shift+F
+        var copyToSearchGesture = new KeyGesture(Key.F, ModifierKeys.Control | ModifierKeys.Shift);
+        InputBindings.Add(new KeyBinding(_viewModel.CopyToSearchCommand, copyToSearchGesture));
 
         // Set initial row height and splitter visibility based on ShowLookingGlass setting
         Loaded += (s, e) =>
@@ -854,6 +861,55 @@ public partial class MainWindow : Window
         {
             PerformSearch();
             e.Handled = true;
+        }
+    }
+
+    private void SearchExpandButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isSearchBoxExpanded)
+        {
+            CollapseSearchBox();
+        }
+        else
+        {
+            ExpandSearchBox();
+        }
+    }
+
+    private void ExpandSearchBox()
+    {
+        _isSearchBoxExpanded = true;
+        SearchBox.Width = _originalSearchBoxWidth;
+        SearchBox.Height = 80;
+        SearchBox.MaxLines = 5;
+        SearchBox.AcceptsReturn = true;
+        SearchBox.TextWrapping = TextWrapping.Wrap;
+        SearchBox.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        SearchExpandButton.Content = "▲";
+        SearchExpandButton.ToolTip = "Collapse search box";
+        SearchBox.Focus();
+    }
+
+    private void CollapseSearchBox()
+    {
+        _isSearchBoxExpanded = false;
+        SearchBox.Width = _originalSearchBoxWidth;
+        SearchBox.Height = _originalSearchBoxHeight;
+        SearchBox.MaxLines = 1;
+        SearchBox.AcceptsReturn = false;
+        SearchBox.TextWrapping = TextWrapping.NoWrap;
+        SearchBox.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+        SearchExpandButton.Content = "▼";
+        SearchExpandButton.ToolTip = "Expand search box";
+        SearchExpandButton.IsChecked = false;
+    }
+
+    private void SearchBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        // Collapse the search box when it loses focus, unless the expand button was clicked
+        if (_isSearchBoxExpanded && !SearchExpandButton.IsMouseOver)
+        {
+            CollapseSearchBox();
         }
     }
 

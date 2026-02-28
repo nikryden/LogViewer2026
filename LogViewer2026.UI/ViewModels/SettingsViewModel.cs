@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LogViewer2026.Core.Configuration;
 using LogViewer2026.Core.Services;
+using System.IO;
 using WpfMessageBox = System.Windows.MessageBox;
 using MessageBoxButton = System.Windows.MessageBoxButton;
 using MessageBoxImage = System.Windows.MessageBoxImage;
@@ -136,6 +137,68 @@ public sealed partial class SettingsViewModel : ObservableObject
             await _settingsService.SaveAsync(settings);
             await LoadSettingsAsync();
             WpfMessageBox.Show("Settings reset to defaults!", "Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ClearCacheAsync()
+    {
+        var result = WpfMessageBox.Show(
+            "This will delete all cached log data. The cache will be rebuilt when you next open log files.\n\nAre you sure you want to clear the cache?",
+            "Clear Cache",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            try
+            {
+                var cacheDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "LogViewer2026",
+                    "Cache");
+
+                if (Directory.Exists(cacheDir))
+                {
+                    // Delete all files in cache directory
+                    var files = Directory.GetFiles(cacheDir);
+                    foreach (var file in files)
+                    {
+                        try
+                        {
+                            File.Delete(file);
+                        }
+                        catch
+                        {
+                            // Ignore files that can't be deleted (e.g., locked database files)
+                        }
+                    }
+
+                    await Task.Delay(100); // Small delay to ensure files are deleted
+
+                    WpfMessageBox.Show(
+                        $"Cache cleared successfully!\n\nDeleted {files.Length} cache file(s).",
+                        "Cache Cleared",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                else
+                {
+                    WpfMessageBox.Show(
+                        "Cache directory does not exist or is already empty.",
+                        "Cache Cleared",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                WpfMessageBox.Show(
+                    $"Error clearing cache: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
     }
 }
