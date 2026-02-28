@@ -1,8 +1,4 @@
-﻿using LogViewer2026.Core.Interfaces;
-using LogViewer2026.Core.Models;
-using LogViewer2026.Core.Services;
-using LogViewer2026.Infrastructure.FileReading;
-using LogViewer2026.Infrastructure.Parsing;
+﻿using LogViewer2026.Core.Services;
 using LogViewer2026.Infrastructure.Services;
 using LogViewer2026.UI.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
