@@ -70,6 +70,12 @@
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
 
+                                <Label Content="Mouse Wheel Font Size Step:"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBox Width="80" Text="{Binding FontSizeWheelStep, Mode=TwoWay}" />
+                                    <TextBlock Text=" per wheel step when holding Ctrl" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                </StackPanel>
+
                                 <CheckBox Content="Reload to last row" 
                                           IsChecked="{Binding ReloadToLastRow}" 
                                           Margin="0,5,0,5"/>
@@ -189,6 +195,64 @@
             </TabItem>
 
             <!-- About -->
+            <TabItem Header="Shortcuts">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Keyboard Shortcuts" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                        <TextBlock Text="Below is a list of common keyboard shortcuts available in LogViewer2026." FontStyle="Italic" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,0,0,10"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Header -->
+                            <TextBlock Text="Shortcut" FontWeight="Bold" Grid.Column="0"/>
+                            <TextBlock Text="Action" FontWeight="Bold" Grid.Column="1"/>
+
+                            <!-- Shortcuts list -->
+                            <StackPanel Grid.ColumnSpan="2" Margin="0,8,0,0">
+                                <UniformGrid Columns="2" Rows="12">
+                                    <TextBlock Text="Ctrl + R" Margin="4"/>
+                                    <TextBlock Text="Clear filters" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + Shift + R" Margin="4"/>
+                                    <TextBlock Text="Reload files" Margin="4"/>
+
+                                    <TextBlock Text="F3" Margin="4"/>
+                                    <TextBlock Text="Find next result" Margin="4"/>
+
+                                    <TextBlock Text="Shift + F3" Margin="4"/>
+                                    <TextBlock Text="Find previous result" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + L" Margin="4"/>
+                                    <TextBlock Text="Select whole line" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + F" Margin="4"/>
+                                    <TextBlock Text="Focus search box" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + Shift + F" Margin="4"/>
+                                    <TextBlock Text="Copy selection to search" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + C" Margin="4"/>
+                                    <TextBlock Text="Copy selection to clipboard" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + A" Margin="4"/>
+                                    <TextBlock Text="Select all" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + Shift + F3" Margin="4"/>
+                                    <TextBlock Text="(Not currently used)" Margin="4"/>
+
+                                    <TextBlock Text="Ctrl + Shift + ?" Margin="4"/>
+                                    <TextBlock Text="Open this shortcuts help (Settings -> Shortcuts)" Margin="4"/>
+                                </UniformGrid>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="About">
 				<ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="20">

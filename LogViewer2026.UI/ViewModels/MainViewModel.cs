@@ -32,6 +32,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private int _cachedContextLines = 5; // Cache the setting
     private bool _cachedReloadToLastRow = false; // Cache the reload behavior setting
     private bool _cachedUseRegexSearch = false; // Cache the regex search setting
+    private double _cachedLogEditorFontSize = 12.0; // Cache log editor font size
+    private double _cachedLookingGlassFontSize = 10.0; // Cache looking glass font size
+    private double _cachedFontSizeWheelStep = 1.0; // Cache wheel step
     private System.Text.RegularExpressions.Regex? _cachedRegex; // Cache compiled regex for ApplySearchFilter
     private string _cachedRegexPattern = string.Empty; // Track pattern for cache invalidation
     private List<int> _originalLineOffsets = new(); // Pre-built line start offsets for O(1) access
@@ -78,6 +81,15 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _progressText = string.Empty;
+
+    [ObservableProperty]
+    private double _logEditorFontSize = 12.0;
+
+    [ObservableProperty]
+    private double _lookingGlassFontSize = 10.0;
+
+    [ObservableProperty]
+    private double _fontSizeWheelStep = 1.0;
 
     [ObservableProperty]
     private LogLevel? _filterLevel;
@@ -240,22 +252,69 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             var settings = await _settingsService.LoadAsync();
             _cachedContextLines = settings.LookingGlassContextLines;
+            _cachedLogEditorFontSize = settings.LogEditorFontSize;
+            _cachedLookingGlassFontSize = settings.LookingGlassFontSize;
+            _cachedFontSizeWheelStep = settings.FontSizeWheelStep;
             AutoUpdateLookingGlass = settings.AutoUpdateLookingGlass;
             FilterSearchResults = settings.FilterSearchResults;
             ShowLookingGlass = settings.ShowLookingGlass;
             _cachedReloadToLastRow = settings.ReloadToLastRow;
             _cachedUseRegexSearch = settings.UseRegexSearch;
             UseRegexSearch = settings.UseRegexSearch;
+            // apply to observable properties so bindings pick up values
+            LogEditorFontSize = _cachedLogEditorFontSize;
+            LookingGlassFontSize = _cachedLookingGlassFontSize;
+            FontSizeWheelStep = _cachedFontSizeWheelStep;
         }
         catch
         {
             _cachedContextLines = 5; // Default
+            _cachedLogEditorFontSize = 12.0; // Default
+            _cachedLookingGlassFontSize = 10.0; // Default
+            _cachedFontSizeWheelStep = 1.0; // Default
             AutoUpdateLookingGlass = false; // Default
             FilterSearchResults = false; // Default
             ShowLookingGlass = true; // Default
             _cachedReloadToLastRow = false; // Default
             _cachedUseRegexSearch = false; // Default
             UseRegexSearch = false; // Default
+        }
+    }
+
+    // Getters for cached sizes
+    public double GetLogEditorFontSize() => _cachedLogEditorFontSize;
+
+    public double GetLookingGlassFontSize() => _cachedLookingGlassFontSize;
+
+    // Persist log editor font size
+    public async Task SaveLogEditorFontSizeAsync(double size)
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            settings.LogEditorFontSize = (double)Math.Clamp(size, 10.0, 35.0);
+            await _settingsService.SaveAsync(settings);
+            _cachedLogEditorFontSize = settings.LogEditorFontSize;
+        }
+        catch
+        {
+            // ignore
+        }
+    }
+
+    // Persist looking glass font size
+    public async Task SaveLookingGlassFontSizeAsync(double size)
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            settings.LookingGlassFontSize = (double)Math.Clamp(size, 10.0, 35.0);
+            await _settingsService.SaveAsync(settings);
+            _cachedLookingGlassFontSize = settings.LookingGlassFontSize;
+        }
+        catch
+        {
+            // ignore
         }
     }
 
@@ -1460,196 +1519,75 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        // Use cached context lines setting
-        var contextLines = _cachedContextLines;
-
-        // Calculate selection end position to determine which lines are selected
-        var selectedEndOffset = selectedStartOffset + selectedLength;
-
-        // Get line from displayed text using indexing instead of Split
-        int displayedLineStart = 0;
-        int currentDisplayedLineNumber = 1;
-        string currentLineText = string.Empty;
-        int selectionEndLineNumber = selectedLineNumber; // Track where selection ends
-
-        // First pass: find the line at selection start
-        for (int i = 0; i <= currentDisplayedText.Length; i++)
-        {
-            if (i == currentDisplayedText.Length || currentDisplayedText[i] == '\n')
-            {
-                if (currentDisplayedLineNumber == selectedLineNumber)
-                {
-                    int end = i;
-                    if (end > displayedLineStart && currentDisplayedText[end - 1] == '\r')
-                        end--;
-                    currentLineText = currentDisplayedText.Substring(displayedLineStart, end - displayedLineStart);
-                    break;
-                }
-                displayedLineStart = i + 1;
-                currentDisplayedLineNumber++;
-            }
-        }
-
-        // Second pass: find the line at selection end (if multi-line selection)
-        if (selectedLength > 0)
-        {
-            displayedLineStart = 0;
-            currentDisplayedLineNumber = 1;
-            for (int i = 0; i <= currentDisplayedText.Length; i++)
-            {
-                if (i == currentDisplayedText.Length || currentDisplayedText[i] == '\n')
-                {
-                    // Check if selection end is within this line
-                    int lineEnd = i;
-                    if (selectedEndOffset >= displayedLineStart && selectedEndOffset <= lineEnd)
-                    {
-                        selectionEndLineNumber = currentDisplayedLineNumber;
-                        break;
-                    }
-                    displayedLineStart = i + 1;
-                    currentDisplayedLineNumber++;
-                }
-            }
-        }
-
-        if (string.IsNullOrEmpty(currentLineText))
+        // Safety check: ensure line index is built
+        if (_originalLineOffsets.Count == 0)
         {
             SelectedLookingGlas.Text = string.Empty;
             return;
         }
 
-        // Calculate offset within the line for the selection start and end
-        int lineStartOffset = 0;
-        for (int i = 0; i < selectedLineNumber - 1 && lineStartOffset < currentDisplayedText.Length; i++)
+        var contextLines = _cachedContextLines;
+
+        // Build array of displayed lines for simple mapping
+        var displayedLines = string.IsNullOrEmpty(currentDisplayedText)
+            ? Array.Empty<string>()
+            : currentDisplayedText.Split('\n');
+
+        // Early exit if no displayed lines to avoid Math.Clamp exception
+        if (displayedLines.Length == 0)
         {
-            int nextNewline = currentDisplayedText.IndexOf('\n', lineStartOffset);
-            if (nextNewline < 0) break;
-            lineStartOffset = nextNewline + 1;
-        }
-        var offsetInLine = selectedStartOffset - lineStartOffset;
-
-        // Calculate offset at selection end (for multi-line selections)
-        int selectionEndLineStartOffset = 0;
-        for (int i = 0; i < selectionEndLineNumber - 1 && selectionEndLineStartOffset < currentDisplayedText.Length; i++)
-        {
-            int nextNewline = currentDisplayedText.IndexOf('\n', selectionEndLineStartOffset);
-            if (nextNewline < 0) break;
-            selectionEndLineStartOffset = nextNewline + 1;
-        }
-        var offsetInEndLine = selectedEndOffset - selectionEndLineStartOffset;
-
-        // Find this line in the original text using the index
-        int originalLineNumber = FindOriginalLineNumber(currentLineText);
-
-        if (originalLineNumber == -1)
-        {
-            // Line not found in original text, just show the current line with context from displayed text
-            var sb = new System.Text.StringBuilder();
-            int displayLineNum = 1;
-            int lineStart = 0;
-            int startLine = Math.Max(1, selectedLineNumber - contextLines);
-            int endLine = Math.Min(currentDisplayedLineNumber, selectedLineNumber + contextLines);
-            int newHighlightStartOffset = 0;
-            int newHighlightEndOffset = 0;
-
-            for (int i = 0; i <= currentDisplayedText.Length; i++)
-            {
-                if (i == currentDisplayedText.Length || currentDisplayedText[i] == '\n')
-                {
-                    if (displayLineNum >= startLine && displayLineNum <= endLine)
-                    {
-                        if (sb.Length > 0) sb.Append('\n');
-
-                        if (displayLineNum == selectedLineNumber)
-                        {
-                            newHighlightStartOffset = sb.Length + Math.Max(0, offsetInLine);
-                        }
-
-                        if (displayLineNum == selectionEndLineNumber)
-                        {
-                            newHighlightEndOffset = sb.Length + Math.Max(0, offsetInEndLine);
-                        }
-
-                        int end = i;
-                        if (end > lineStart && currentDisplayedText[end - 1] == '\r')
-                            end--;
-                        sb.Append(currentDisplayedText.AsSpan(lineStart, end - lineStart));
-                    }
-
-                    displayLineNum++;
-                    if (displayLineNum > endLine) break;
-                    lineStart = i + 1;
-                }
-            }
-
-            SelectedLookingGlas.Text = sb.ToString();
-            SelectedLookingGlas.HighlightStartOffset = newHighlightStartOffset;
-            // Calculate actual highlight length from the Looking Glass text structure
-            SelectedLookingGlas.HighlightLength = Math.Max(0, 
-                Math.Min(newHighlightEndOffset, sb.Length) - newHighlightStartOffset);
-            SelectedLookingGlas.StartingLineNumber = startLine;
+            SelectedLookingGlas.Text = string.Empty;
             return;
         }
 
-        // Use indexed access to original text
-        var originalStartLine = Math.Max(0, originalLineNumber - contextLines);
-        var originalEndLine = Math.Min(_originalLineOffsets.Count - 1, originalLineNumber + contextLines);
+        var dispIndex = Math.Clamp(selectedLineNumber - 1, 0, displayedLines.Length - 1);
+        var currentLineText = displayedLines[dispIndex].TrimEnd('\r');
 
-        // Find the end line in the original text (might be different if selection spans multiple lines)
-        var selectionEndLineText = string.Empty;
-        int endLineStartOffset = 0;
-        for (int i = 0; i < selectionEndLineNumber - 1 && endLineStartOffset < currentDisplayedText.Length; i++)
+        // Calculate offset within displayed line
+        int offsetInLine = 0;
+        if (dispIndex > 0 && selectedStartOffset >= 0)
         {
-            int nextNewline = currentDisplayedText.IndexOf('\n', endLineStartOffset);
-            if (nextNewline < 0) break;
-            endLineStartOffset = nextNewline + 1;
+            int accum = 0;
+            for (int i = 0; i < dispIndex && i < displayedLines.Length; i++)
+                accum += displayedLines[i].Length + 1; // include newline
+            offsetInLine = Math.Max(0, selectedStartOffset - accum);
         }
-        // Extract the selection end line text
-        for (int i = endLineStartOffset; i <= currentDisplayedText.Length; i++)
+
+        // Find corresponding original line
+        int originalLineNumber = FindOriginalLineNumber(currentLineText);
+        if (originalLineNumber == -1)
         {
-            if (i == currentDisplayedText.Length || currentDisplayedText[i] == '\n')
-            {
-                int end = i;
-                if (end > endLineStartOffset && currentDisplayedText[end - 1] == '\r')
-                    end--;
-                selectionEndLineText = currentDisplayedText.Substring(endLineStartOffset, end - endLineStartOffset);
-                break;
-            }
+            // fallback: show only the displayed line
+            SelectedLookingGlas.Text = currentLineText;
+            SelectedLookingGlas.HighlightStartOffset = Math.Min(offsetInLine, currentLineText.Length);
+            SelectedLookingGlas.HighlightLength = Math.Min(selectedLength, currentLineText.Length - SelectedLookingGlas.HighlightStartOffset);
+            SelectedLookingGlas.StartingLineNumber = selectedLineNumber;
+            return;
         }
-        int originalSelectionEndLineNumber = selectionEndLineNumber == selectedLineNumber 
-            ? originalLineNumber 
-            : FindOriginalLineNumber(selectionEndLineText);
-        if (originalSelectionEndLineNumber == -1)
-            originalSelectionEndLineNumber = originalLineNumber; // Fallback to start line
 
-        var originalContextText = new System.Text.StringBuilder();
-        int highlightOffset = 0;
-        int highlightEndOffset = 0;
+        int totalOriginalLines = _originalLineOffsets.Count;
+        int originalStartLine = Math.Max(0, originalLineNumber - contextLines);
+        int originalEndLine = Math.Min(totalOriginalLines - 1, originalLineNumber + contextLines);
 
+        var sb = new System.Text.StringBuilder();
         for (int i = originalStartLine; i <= originalEndLine; i++)
         {
-            if (originalContextText.Length > 0)
-                originalContextText.Append('\n');
-
-            if (i == originalLineNumber)
-            {
-                highlightOffset = originalContextText.Length + Math.Max(0, offsetInLine);
-            }
-
-            if (i == originalSelectionEndLineNumber)
-            {
-                highlightEndOffset = originalContextText.Length + Math.Max(0, offsetInEndLine);
-            }
-
-            originalContextText.Append(GetOriginalLine(i));
+            if (sb.Length > 0) sb.Append('\n');
+            sb.Append(GetOriginalLine(i));
         }
 
-        SelectedLookingGlas.Text = originalContextText.ToString();
-        SelectedLookingGlas.HighlightStartOffset = highlightOffset;
-        // Calculate actual highlight length from the Looking Glass text structure
-        SelectedLookingGlas.HighlightLength = Math.Max(0, 
-            Math.Min(highlightEndOffset, originalContextText.Length) - highlightOffset);
-        SelectedLookingGlas.StartingLineNumber = originalStartLine + 1; // Line numbers are 1-based
+        // Calculate highlight offset within the looking glass text
+        int highlightOffset = 0;
+        for (int i = originalStartLine; i < originalLineNumber; i++)
+            highlightOffset += GetOriginalLine(i).Length + 1; // newline
+        highlightOffset += Math.Max(0, offsetInLine);
+
+        int highlightLength = Math.Min(selectedLength, GetOriginalLine(originalLineNumber).Length - Math.Max(0, offsetInLine));
+
+        SelectedLookingGlas.Text = sb.ToString();
+        SelectedLookingGlas.HighlightStartOffset = Math.Clamp(highlightOffset, 0, SelectedLookingGlas.Text.Length);
+        SelectedLookingGlas.HighlightLength = Math.Max(0, Math.Min(highlightLength, SelectedLookingGlas.Text.Length - SelectedLookingGlas.HighlightStartOffset));
+        SelectedLookingGlas.StartingLineNumber = originalStartLine + 1;
     }
 
 

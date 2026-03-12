@@ -45,6 +45,15 @@ public sealed partial class SettingsViewModel : ObservableObject
     private int _lookingGlassContextLines = 5;
 
     [ObservableProperty]
+    private double _logEditorFontSize = 12.0;
+
+    [ObservableProperty]
+    private double _lookingGlassFontSize = 10.0;
+
+    [ObservableProperty]
+    private double _fontSizeWheelStep = 1.0;
+
+    [ObservableProperty]
     private bool _autoUpdateLookingGlass = false;
 
     [ObservableProperty]
@@ -83,6 +92,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         LoadMultipleFiles = settings.LoadMultipleFiles;
         LookingGlassContextLines = settings.LookingGlassContextLines;
         AutoUpdateLookingGlass = settings.AutoUpdateLookingGlass;
+        LogEditorFontSize = settings.LogEditorFontSize;
+        LookingGlassFontSize = settings.LookingGlassFontSize;
+        FontSizeWheelStep = settings.FontSizeWheelStep;
         FilterSearchResults = settings.FilterSearchResults;
         ShowLookingGlass = settings.ShowLookingGlass;
         ReloadToLastRow = settings.ReloadToLastRow;
@@ -104,6 +116,9 @@ public sealed partial class SettingsViewModel : ObservableObject
             MaxRecentFiles = MaxRecentFiles,
             LoadMultipleFiles = LoadMultipleFiles,
             LookingGlassContextLines = LookingGlassContextLines,
+            LogEditorFontSize = LogEditorFontSize,
+            LookingGlassFontSize = LookingGlassFontSize,
+            FontSizeWheelStep = FontSizeWheelStep,
             AutoUpdateLookingGlass = AutoUpdateLookingGlass,
             FilterSearchResults = FilterSearchResults,
             ShowLookingGlass = ShowLookingGlass,

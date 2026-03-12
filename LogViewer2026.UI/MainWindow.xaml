@@ -12,7 +12,8 @@
         WindowStyle="None"
         ResizeMode="CanResizeWithGrip"
         AllowsTransparency="True"
-        Background="Transparent" Icon="/LogViewer2026_v2.png">
+        Background="Transparent" Icon="/LogViewer2026_v2.png"
+        StateChanged="Window_StateChanged">
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="5"
@@ -26,7 +27,8 @@
         <KeyBinding Key="R" Modifiers="Control+Shift" Command="{Binding ReloadFilesCommand}"/>
     </Window.InputBindings>
 
-    <Border Background="{DynamicResource WindowBackgroundBrush}"
+    <Border x:Name="WindowBorder"
+            Background="{DynamicResource WindowBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             CornerRadius="10"            
             BorderThickness="1">
@@ -361,7 +363,7 @@
             <avalon:TextEditor Grid.Row="1"
                                x:Name="LogEditor"
                                FontFamily="Consolas"
-                               FontSize="12"
+                               FontSize="{Binding LogEditorFontSize, Mode=TwoWay}"
                                IsReadOnly="True"
                                ShowLineNumbers="True"
                                WordWrap="False"
@@ -473,7 +475,7 @@
             <avalon:TextEditor Grid.Row="1"
                                x:Name="LogLookingGlas"
                                FontFamily="Consolas"
-                               FontSize="14"
+                               FontSize="{Binding LookingGlassFontSize, Mode=TwoWay}"
                                IsReadOnly="True"
                                ShowLineNumbers="True"
                                WordWrap="False"
@@ -529,8 +531,9 @@
 
         <!-- Status Bar -->
         <StatusBar Grid.Row="6"
-                   Background="Gray"
+                   Background="Coral"
                    Foreground="Black"
+                   
                    >
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusText}"/>
@@ -543,17 +546,17 @@
                 </StackPanel>
             </StatusBarItem>
             <Separator/>
-            <StatusBarItem>
+            <!--<StatusBarItem>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Displayed: "/>
                     <TextBlock Text="{Binding LogEntries.Count, StringFormat='{}{0:N0}'}"/>
                 </StackPanel>
             </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
+            <Separator/>-->
+            <!--<StatusBarItem>
                 <TextBlock Text="{Binding LoadedFilesInfo}"/>
-            </StatusBarItem>
-            <Separator Visibility="{Binding FilesHaveChanged, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            </StatusBarItem>-->
+            <!--<Separator Visibility="{Binding FilesHaveChanged, Converter={StaticResource BoolToVisibilityConverter}}"/>-->
             <StatusBarItem Visibility="{Binding FilesHaveChanged, Converter={StaticResource BoolToVisibilityConverter}}" HorizontalAlignment="Right">
                 <Button Command="{Binding ReloadFilesCommand}"
                         Background="#FFF4C430"
