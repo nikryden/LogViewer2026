@@ -19,4 +19,9 @@ public sealed class AppSettings
     public bool ShowLookingGlass { get; set; } = true;
     public bool ReloadToLastRow { get; set; } = false;
     public bool UseRegexSearch { get; set; } = false;
+    // Font sizes for the editors
+    public double LogEditorFontSize { get; set; } = 12.0;
+    public double LookingGlassFontSize { get; set; } = 10.0;
+    // How much to change font size per mouse wheel step when Ctrl is held
+    public double FontSizeWheelStep { get; set; } = 1.0;
 }
