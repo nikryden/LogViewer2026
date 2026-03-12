@@ -6,6 +6,7 @@ using LogViewer2026.UI.Highlighting;
 using LogViewer2026.UI.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using System.ComponentModel;
+using System;
 using ICSharpCode.AvalonEdit.Document;
 using ICSharpCode.AvalonEdit.Editing;
 using WpfApp = System.Windows.Application;
@@ -72,6 +73,11 @@ public partial class MainWindow : Window
                 {
                     _viewModel.ApplySearchFilter();
                 }
+
+    // Removed Editor_PreviewMouseWheel method now that inline lambdas are used
+
+
+
             }
 
             LogEditor.TextArea.TextView.Redraw();
@@ -178,6 +184,54 @@ public partial class MainWindow : Window
         {
             UpdateLookingGlassRowHeight();
             UpdateSplitterVisibility();
+        };
+
+        // Font sizes are bound to the ViewModel properties; no manual application needed here.
+
+        // Handle Ctrl+MouseWheel on AvalonEdit editors to change font size
+        LogEditor.PreviewMouseWheel += (s, e) =>
+        {
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == 0)
+                return;
+            if (s is not ICSharpCode.AvalonEdit.TextEditor editor)
+                return;
+            // only when the editor (or one of its children) has keyboard focus
+            if (!editor.IsKeyboardFocusWithin)
+                return;
+
+            var step = Math.Max(0.0, _viewModel.FontSizeWheelStep);
+            var delta = e.Delta > 0 ? step : -step;
+            var current = _viewModel.LogEditorFontSize;
+            var newSize = Math.Clamp(current + delta, 10.0, 35.0);
+            if (Math.Abs(newSize - current) > 0.001)
+            {
+                // update ViewModel property (binding updates UI)
+                _viewModel.LogEditorFontSize = newSize;
+                _ = _viewModel.SaveLogEditorFontSizeAsync(newSize);
+            }
+            e.Handled = true;
+        };
+
+        LogLookingGlas.PreviewMouseWheel += (s, e) =>
+        {
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == 0)
+                return;
+            if (s is not ICSharpCode.AvalonEdit.TextEditor editor)
+                return;
+            // only when the editor (or one of its children) has keyboard focus
+            if (!editor.IsKeyboardFocusWithin)
+                return;
+
+            var step2 = Math.Max(0.0, _viewModel.FontSizeWheelStep);
+            var delta2 = e.Delta > 0 ? step2 : -step2;
+            var current = _viewModel.LookingGlassFontSize;
+            var newSize = Math.Clamp(current + delta2, 10.0, 35.0);
+            if (Math.Abs(newSize - current) > 0.001)
+            {
+                _viewModel.LookingGlassFontSize = newSize;
+                _ = _viewModel.SaveLookingGlassFontSizeAsync(newSize);
+            }
+            e.Handled = true;
         };
     }
 
@@ -556,6 +610,26 @@ public partial class MainWindow : Window
     private void Close_Click(object sender, RoutedEventArgs e)
     {
         this.Close();
+    }
+
+    private void Window_StateChanged(object? sender, EventArgs e)
+    {
+        // When maximized, adjust margins and corner radius to prevent StatusBar from being hidden
+        if (this.WindowState == WindowState.Maximized)
+        {
+            // Remove corner radius when maximized (looks better and prevents rendering issues)
+            WindowBorder.CornerRadius = new CornerRadius(0);
+
+            // Add margin to account for screen bounds - prevents content from being pushed off-screen
+            // This compensates for the window being positioned outside the screen bounds by Windows
+            MainGrid.Margin = new Thickness(7);
+        }
+        else
+        {
+            // Restore original appearance for normal/minimized state
+            WindowBorder.CornerRadius = new CornerRadius(10);
+            MainGrid.Margin = new Thickness(2);
+        }
     }
 
     private void Menu_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
