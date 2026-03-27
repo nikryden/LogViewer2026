@@ -317,6 +317,14 @@
                     <TextBlock Text="Reload" VerticalAlignment="Center" FontWeight="SemiBold"/>
                 </StackPanel>
             </Button>
+            <CheckBox IsChecked="{Binding AutoReloadOnChange}"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      ToolTip="Automatically reload files when changes are detected"
+                      Checked="AutoReloadCheckBox_Changed"
+                      Unchecked="AutoReloadCheckBox_Changed">
+                <TextBlock Text="👁️" FontSize="14"/>
+            </CheckBox>
 
             <Separator Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <TextBlock Text="Go to file:" 

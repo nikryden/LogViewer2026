@@ -190,6 +190,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _useRegexSearch = false;
 
     [ObservableProperty]
+    private bool _autoReloadOnChange = false;
+
+    [ObservableProperty]
     private LogLevelOption? _selectedLogLevelOption;
 
     public IEnumerable<LogLevelOption> AvailableLogLevels { get; } = new[]
@@ -261,6 +264,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _cachedReloadToLastRow = settings.ReloadToLastRow;
             _cachedUseRegexSearch = settings.UseRegexSearch;
             UseRegexSearch = settings.UseRegexSearch;
+            AutoReloadOnChange = settings.AutoReloadOnChange;
             // apply to observable properties so bindings pick up values
             LogEditorFontSize = _cachedLogEditorFontSize;
             LookingGlassFontSize = _cachedLookingGlassFontSize;
@@ -424,6 +428,20 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         {
             var settings = await _settingsService.LoadAsync();
             settings.FilterSearchResults = FilterSearchResults;
+            await _settingsService.SaveAsync(settings);
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
+    public async Task SaveAutoReloadOnChangeSettingAsync()
+    {
+        try
+        {
+            var settings = await _settingsService.LoadAsync();
+            settings.AutoReloadOnChange = AutoReloadOnChange;
             await _settingsService.SaveAsync(settings);
         }
         catch
@@ -1414,10 +1432,21 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
 
         _fileChangesPending = false;
-        WpfApp.Current.Dispatcher.Invoke(() =>
+
+        if (AutoReloadOnChange)
         {
-            FilesHaveChanged = true;
-        });
+            WpfApp.Current.Dispatcher.Invoke(() =>
+            {
+                _ = ReloadFilesAsync();
+            });
+        }
+        else
+        {
+            WpfApp.Current.Dispatcher.Invoke(() =>
+            {
+                FilesHaveChanged = true;
+            });
+        }
     }
 
     [RelayCommand]
