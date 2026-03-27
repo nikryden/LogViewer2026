@@ -104,27 +104,26 @@ public sealed partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private async Task SaveAsync()
     {
-        var settings = new AppSettings
-        {
-            OutputTemplate = OutputTemplate,
-            PathFormat = PathFormat,
-            RollingInterval = RollingInterval,
-            CacheSize = CacheSize,
-            MaxFileSizeMB = MaxFileSizeMB,
-            EnableIndexing = EnableIndexing,
-            Theme = Theme,
-            MaxRecentFiles = MaxRecentFiles,
-            LoadMultipleFiles = LoadMultipleFiles,
-            LookingGlassContextLines = LookingGlassContextLines,
-            LogEditorFontSize = LogEditorFontSize,
-            LookingGlassFontSize = LookingGlassFontSize,
-            FontSizeWheelStep = FontSizeWheelStep,
-            AutoUpdateLookingGlass = AutoUpdateLookingGlass,
-            FilterSearchResults = FilterSearchResults,
-            ShowLookingGlass = ShowLookingGlass,
-            ReloadToLastRow = ReloadToLastRow,
-            UseRegexSearch = UseRegexSearch
-        };
+        // Load existing settings first to preserve values not managed by this window (e.g. AutoReloadOnChange)
+        var settings = await _settingsService.LoadAsync();
+        settings.OutputTemplate = OutputTemplate;
+        settings.PathFormat = PathFormat;
+        settings.RollingInterval = RollingInterval;
+        settings.CacheSize = CacheSize;
+        settings.MaxFileSizeMB = MaxFileSizeMB;
+        settings.EnableIndexing = EnableIndexing;
+        settings.Theme = Theme;
+        settings.MaxRecentFiles = MaxRecentFiles;
+        settings.LoadMultipleFiles = LoadMultipleFiles;
+        settings.LookingGlassContextLines = LookingGlassContextLines;
+        settings.LogEditorFontSize = LogEditorFontSize;
+        settings.LookingGlassFontSize = LookingGlassFontSize;
+        settings.FontSizeWheelStep = FontSizeWheelStep;
+        settings.AutoUpdateLookingGlass = AutoUpdateLookingGlass;
+        settings.FilterSearchResults = FilterSearchResults;
+        settings.ShowLookingGlass = ShowLookingGlass;
+        settings.ReloadToLastRow = ReloadToLastRow;
+        settings.UseRegexSearch = UseRegexSearch;
 
         await _settingsService.SaveAsync(settings);
 

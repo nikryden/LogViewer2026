@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LogViewer2026.UI"
+        xmlns:core="clr-namespace:LogViewer2026.Core;assembly=LogViewer2026.Core"
         xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit"
         mc:Ignorable="d"
         Title="LogViewer2026 Log Viewer" 
@@ -87,6 +88,11 @@
                        Margin="0"
                        Foreground="{DynamicResource PrimaryTextBrush}"
                        FontSize="12"/>
+            <TextBlock Text="{x:Static core:AppVersion.Current}"
+                       VerticalAlignment="Center"
+                       Margin="4,0,0,0"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       FontSize="11"/>
             <!-- Menu Bar -->
             <Menu Grid.Row="1" 
                 Background="{DynamicResource WindowBackgroundBrush}" 
@@ -317,6 +323,14 @@
                     <TextBlock Text="Reload" VerticalAlignment="Center" FontWeight="SemiBold"/>
                 </StackPanel>
             </Button>
+            <CheckBox IsChecked="{Binding AutoReloadOnChange}"
+                      VerticalAlignment="Center"
+                      Margin="5,0"
+                      ToolTip="Automatically reload files when changes are detected"
+                      Checked="AutoReloadCheckBox_Changed"
+                      Unchecked="AutoReloadCheckBox_Changed">
+                <TextBlock Text="👁️" FontSize="14"/>
+            </CheckBox>
 
             <Separator Visibility="{Binding HasMultipleFiles, Converter={StaticResource BoolToVisibilityConverter}}"/>
             <TextBlock Text="Go to file:" 

@@ -654,6 +654,11 @@ public partial class MainWindow : Window
         _viewModel.ApplySearchFilter();
     }
 
+    private void AutoReloadCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        _ = _viewModel.SaveAutoReloadOnChangeSettingAsync();
+    }
+
     private void LogLookingGlas_ContextMenuOpening(object sender, System.Windows.Controls.ContextMenuEventArgs e)
     {
         // Set flag to indicate LogLookingGlas context menu is active

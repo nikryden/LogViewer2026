@@ -19,6 +19,7 @@ public sealed class AppSettings
     public bool ShowLookingGlass { get; set; } = true;
     public bool ReloadToLastRow { get; set; } = false;
     public bool UseRegexSearch { get; set; } = false;
+    public bool AutoReloadOnChange { get; set; } = false;
     // Font sizes for the editors
     public double LogEditorFontSize { get; set; } = 12.0;
     public double LookingGlassFontSize { get; set; } = 10.0;
