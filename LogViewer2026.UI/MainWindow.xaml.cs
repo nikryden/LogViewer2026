@@ -586,12 +586,31 @@ public partial class MainWindow : Window
         WpfApp.Current.Shutdown();
     }
 
+    private void OpenDropdown_Click(object sender, RoutedEventArgs e)
+    {
+        var button = (System.Windows.Controls.Button)sender;
+        if (button.ContextMenu != null)
+        {
+            button.ContextMenu.PlacementTarget = button;
+            button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            button.ContextMenu.IsOpen = true;
+        }
+    }
+
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        // Allow dragging the window by clicking and dragging the title bar
         if (e.ChangedButton == MouseButton.Left)
         {
-            this.DragMove();
+            if (e.ClickCount == 2)
+            {
+                this.WindowState = this.WindowState == WindowState.Maximized
+                    ? WindowState.Normal
+                    : WindowState.Maximized;
+            }
+            else
+            {
+                this.DragMove();
+            }
         }
     }
 
