@@ -32,6 +32,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private int _cachedContextLines = 5; // Cache the setting
     private bool _cachedReloadToLastRow = false; // Cache the reload behavior setting
     private bool _cachedUseRegexSearch = false; // Cache the regex search setting
+    private bool _cachedUseMultilineRegex = false; // Cache the multiline regex setting
     private double _cachedLogEditorFontSize = 12.0; // Cache log editor font size
     private double _cachedLookingGlassFontSize = 10.0; // Cache looking glass font size
     private double _cachedFontSizeWheelStep = 1.0; // Cache wheel step
@@ -190,6 +191,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _useRegexSearch = false;
 
     [ObservableProperty]
+    private bool _useMultilineRegex = false;
+
+    [ObservableProperty]
     private bool _autoReloadOnChange = false;
 
     [ObservableProperty]
@@ -264,6 +268,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _cachedReloadToLastRow = settings.ReloadToLastRow;
             _cachedUseRegexSearch = settings.UseRegexSearch;
             UseRegexSearch = settings.UseRegexSearch;
+            _cachedUseMultilineRegex = settings.UseMultilineRegex;
+            UseMultilineRegex = settings.UseMultilineRegex;
             AutoReloadOnChange = settings.AutoReloadOnChange;
             // apply to observable properties so bindings pick up values
             LogEditorFontSize = _cachedLogEditorFontSize;
@@ -282,6 +288,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             _cachedReloadToLastRow = false; // Default
             _cachedUseRegexSearch = false; // Default
             UseRegexSearch = false; // Default
+            _cachedUseMultilineRegex = false; // Default
+            UseMultilineRegex = false; // Default
         }
     }
 
@@ -337,6 +345,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _cachedUseRegexSearch = value;
         OnRegexSearchModeChanged?.Invoke(value);
 
+        // Invalidate cached regex when switching modes
+        _cachedRegex = null;
+        _cachedRegexPattern = string.Empty;
+
         // Save the setting
         _ = Task.Run(async () =>
         {
@@ -344,6 +356,31 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             {
                 var settings = await _settingsService.LoadAsync();
                 settings.UseRegexSearch = value;
+                await _settingsService.SaveAsync(settings);
+            }
+            catch
+            {
+                // Ignore errors
+            }
+        });
+    }
+
+    partial void OnUseMultilineRegexChanged(bool value)
+    {
+        _cachedUseMultilineRegex = value;
+        OnMultilineRegexModeChanged?.Invoke(value);
+
+        // Invalidate cached regex when toggling multiline
+        _cachedRegex = null;
+        _cachedRegexPattern = string.Empty;
+
+        // Save the setting
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var settings = await _settingsService.LoadAsync();
+                settings.UseMultilineRegex = value;
                 await _settingsService.SaveAsync(settings);
             }
             catch
@@ -504,43 +541,103 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 if (_cachedRegex == null || _cachedRegexPattern != SearchText)
                 {
                     // Compile new regex with optimizations
-                    _cachedRegex = new System.Text.RegularExpressions.Regex(
-                        SearchText, 
-                        System.Text.RegularExpressions.RegexOptions.IgnoreCase | 
+                    var options = System.Text.RegularExpressions.RegexOptions.IgnoreCase | 
                         System.Text.RegularExpressions.RegexOptions.Compiled | 
-                        System.Text.RegularExpressions.RegexOptions.CultureInvariant,
-                        TimeSpan.FromSeconds(2));
+                        System.Text.RegularExpressions.RegexOptions.CultureInvariant;
+                    if (_cachedUseMultilineRegex)
+                    {
+                        options |= System.Text.RegularExpressions.RegexOptions.Singleline | 
+                                   System.Text.RegularExpressions.RegexOptions.Multiline;
+                    }
+                    _cachedRegex = new System.Text.RegularExpressions.Regex(
+                        SearchText, options, TimeSpan.FromSeconds(2));
                     _cachedRegexPattern = SearchText;
                 }
 
-                int lineStart = 0;
-                var textSpan = text.AsSpan();
-
-                for (int i = 0; i <= textSpan.Length; i++)
+                if (_cachedUseMultilineRegex)
                 {
-                    if (i == textSpan.Length || textSpan[i] == '\n')
+                    // Multiline mode: match against full text, collect lines covered by matches
+                    var matchedLines = new HashSet<int>();
+                    foreach (System.Text.RegularExpressions.Match m in _cachedRegex.Matches(text))
                     {
-                        var lineSpan = textSpan.Slice(lineStart, i - lineStart);
-
-                        bool passesLevel = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
-
-                        // Only check regex if level filter passes (short-circuit evaluation)
-                        bool passesSearch = false;
-                        if (passesLevel)
+                        // Determine which lines this match covers
+                        var matchStart = m.Index;
+                        var matchEnd = m.Index + m.Length;
+                        int lineStart = 0;
+                        int lineNumber = 0;
+                        for (int i = 0; i <= text.Length; i++)
                         {
-                            // Convert span to string only when necessary
-                            var lineString = lineSpan.ToString();
-                            passesSearch = _cachedRegex.IsMatch(lineString);
+                            if (i == text.Length || text[i] == '\n')
+                            {
+                                // Line spans [lineStart, i)
+                                if (lineStart < matchEnd && i > matchStart)
+                                {
+                                    matchedLines.Add(lineNumber);
+                                }
+                                lineStart = i + 1;
+                                lineNumber++;
+                                if (lineStart > matchEnd)
+                                    break;
+                            }
                         }
+                    }
 
-                        if (passesLevel && passesSearch)
+                    // Now build output from matched lines
+                    int currentLine = 0;
+                    int lStart = 0;
+                    var textSpan = text.AsSpan();
+                    for (int i = 0; i <= textSpan.Length; i++)
+                    {
+                        if (i == textSpan.Length || textSpan[i] == '\n')
                         {
-                            if (sb.Length > 0) sb.Append('\n');
-                            sb.Append(lineSpan);
-                            filteredCount++;
+                            if (matchedLines.Contains(currentLine))
+                            {
+                                var lineSpan = textSpan.Slice(lStart, i - lStart);
+                                bool passesLevel = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
+                                if (passesLevel)
+                                {
+                                    if (sb.Length > 0) sb.Append('\n');
+                                    sb.Append(lineSpan);
+                                    filteredCount++;
+                                }
+                            }
+                            lStart = i + 1;
+                            currentLine++;
                         }
+                    }
+                }
+                else
+                {
+                    // Single-line regex mode: match per line
+                    int lineStart = 0;
+                    var textSpan = text.AsSpan();
 
-                        lineStart = i + 1;
+                    for (int i = 0; i <= textSpan.Length; i++)
+                    {
+                        if (i == textSpan.Length || textSpan[i] == '\n')
+                        {
+                            var lineSpan = textSpan.Slice(lineStart, i - lineStart);
+
+                            bool passesLevel = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
+
+                            // Only check regex if level filter passes (short-circuit evaluation)
+                            bool passesSearch = false;
+                            if (passesLevel)
+                            {
+                                // Convert span to string only when necessary
+                                var lineString = lineSpan.ToString();
+                                passesSearch = _cachedRegex.IsMatch(lineString);
+                            }
+
+                            if (passesLevel && passesSearch)
+                            {
+                                if (sb.Length > 0) sb.Append('\n');
+                                sb.Append(lineSpan);
+                                filteredCount++;
+                            }
+
+                            lineStart = i + 1;
+                        }
                     }
                 }
             }
@@ -590,7 +687,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         LogText = sb.ToString();
 
         // Update status to show both filters if applicable
-        var searchMode = _cachedUseRegexSearch ? "regex" : "text";
+        var searchMode = _cachedUseRegexSearch ? (_cachedUseMultilineRegex ? "multiline regex" : "regex") : "text";
         if (FilterLevel == null)
         {
             StatusText = $"Showing {filteredCount:N0} lines matching {searchMode} '{SearchText}'";
@@ -713,6 +810,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     public event Action<string, string>? OnScrollToLine; // lineContent, selectedText
     public event Action? OnScrollToEnd; // Scroll to the last line
     public event Action<bool>? OnRegexSearchModeChanged; // Notify UI when regex mode changes
+    public event Action<bool>? OnMultilineRegexModeChanged; // Notify UI when multiline regex mode changes
 
     [RelayCommand]
     private async Task ApplyFilterAsync()

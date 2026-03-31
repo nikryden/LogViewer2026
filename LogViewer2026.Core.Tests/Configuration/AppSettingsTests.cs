@@ -14,9 +14,7 @@ public class AppSettingsTests
         settings.AutoUpdateLookingGlass.Should().BeFalse();
         settings.FilterSearchResults.Should().BeFalse();
         settings.ShowLookingGlass.Should().BeTrue();
-        settings.CacheSize.Should().Be(10000);
         settings.MaxFileSizeMB.Should().Be(2048);
-        settings.EnableIndexing.Should().BeTrue();
         settings.Theme.Should().Be("Light");
         settings.MaxRecentFiles.Should().Be(10);
         settings.LoadMultipleFiles.Should().BeTrue();

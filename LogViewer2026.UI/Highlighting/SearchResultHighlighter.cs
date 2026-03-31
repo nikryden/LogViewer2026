@@ -21,8 +21,9 @@ public sealed class SearchResultHighlighter : DocumentColorizingTransformer
     private List<TextSegment> _searchResults = new();
 
     // Performance optimization: reuse options
-    private static readonly RegexOptions _regexOptions = RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant;
+    private static readonly RegexOptions _regexOptionsBase = RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant;
     private static readonly TimeSpan _regexTimeout = TimeSpan.FromSeconds(2);
+    private bool _cachedUseMultiline = false;
 
     public string SearchTerm
     {
@@ -50,10 +51,24 @@ public sealed class SearchResultHighlighter : DocumentColorizingTransformer
         }
     }
 
+    private bool _useMultiline = false;
+    public bool UseMultiline
+    {
+        get => _useMultiline;
+        set
+        {
+            if (_useMultiline == value) return;
+
+            _useMultiline = value;
+            UpdateRegexPattern();
+        }
+    }
+
     private void UpdateRegexPattern()
     {
         // Check if we can reuse cached regex
         if (_cachedUseRegex == _useRegex && 
+            _cachedUseMultiline == _useMultiline &&
             _cachedPattern == _searchTerm && 
             _regexPattern != null)
         {
@@ -63,13 +78,20 @@ public sealed class SearchResultHighlighter : DocumentColorizingTransformer
         _regexPattern = null;
         _cachedPattern = _searchTerm;
         _cachedUseRegex = _useRegex;
+        _cachedUseMultiline = _useMultiline;
 
         if (_useRegex && !string.IsNullOrEmpty(_searchTerm))
         {
             try
             {
-                // Use compiled regex with optimizations
-                _regexPattern = new Regex(_searchTerm, _regexOptions, _regexTimeout);
+                var options = _regexOptionsBase;
+                if (_useMultiline)
+                {
+                    // Singleline: '.' matches '\n' (patterns can span lines)
+                    // Multiline: '^'/'$' match at line boundaries
+                    options |= RegexOptions.Singleline | RegexOptions.Multiline;
+                }
+                _regexPattern = new Regex(_searchTerm, options, _regexTimeout);
             }
             catch
             {
@@ -143,6 +165,13 @@ public sealed class SearchResultHighlighter : DocumentColorizingTransformer
     {
         if (string.IsNullOrEmpty(_searchTerm))
             return;
+
+        // For multiline regex, matches may span lines, so use pre-computed results
+        if (_useRegex && _useMultiline && _regexPattern != null)
+        {
+            ColorizeLineFromResults(line);
+            return;
+        }
 
         var lineText = CurrentContext.Document.GetText(line);
 
@@ -221,6 +250,47 @@ public sealed class SearchResultHighlighter : DocumentColorizingTransformer
 
                 index += _searchTerm.Length;
             }
+        }
+    }
+
+    private void ColorizeLineFromResults(DocumentLine line)
+    {
+        var lineStart = line.Offset;
+        var lineEnd = line.EndOffset;
+
+        for (int i = 0; i < _searchResults.Count; i++)
+        {
+            var seg = _searchResults[i];
+            var segEnd = seg.StartOffset + seg.Length;
+
+            // Skip segments entirely before this line
+            if (segEnd <= lineStart)
+                continue;
+
+            // Stop once segments are entirely after this line
+            if (seg.StartOffset >= lineEnd)
+                break;
+
+            // Compute the overlap between the segment and this line
+            var hlStart = Math.Max(seg.StartOffset, lineStart);
+            var hlEnd = Math.Min(segEnd, lineEnd);
+
+            if (hlStart >= hlEnd)
+                continue;
+
+            var isCurrent = _currentResultIndex == i;
+
+            ChangeLinePart(
+                hlStart,
+                hlEnd,
+                element =>
+                {
+                    element.TextRunProperties.SetBackgroundBrush(isCurrent ? _currentBrush : _highlightBrush);
+                    if (isCurrent)
+                    {
+                        element.TextRunProperties.SetForegroundBrush(MediaBrushes.Black);
+                    }
+                });
         }
     }
 }

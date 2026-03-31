@@ -270,7 +270,19 @@
                               Background="{DynamicResource ControlBackgroundBrush}"
                               Foreground="{DynamicResource PrimaryTextBrush}"/>
             </Grid>
-            <Button Click="ExecuteSearch_Click"
+                <CheckBox Content="(.*)" 
+                    IsChecked="{Binding UseRegexSearch}"
+                    VerticalAlignment="Center"
+                    Margin="5,0"
+                    ToolTip="Use regular expressions (e.g., '^ERROR.*timeout$')"/>
+                <CheckBox IsChecked="{Binding UseMultilineRegex}"
+                    IsEnabled="{Binding UseRegexSearch}"
+                    VerticalAlignment="Center"
+                    Margin="5,0"
+                    ToolTip="Enable multiline regex: '.' matches newlines and patterns can span across lines">
+                    <TextBlock Text="≡" FontSize="16" FontWeight="Bold" Margin="0,-2,0,0"/>
+                </CheckBox>
+                <Button Click="ExecuteSearch_Click"
                     Content="🔍" 
                     ToolTip="Execute Search (Enter)"
                     Width="30"
@@ -302,11 +314,7 @@
                 <Run Text="/"/>
                 <Run Text="{Binding TotalSearchResults, Mode=OneWay}"/>
             </TextBlock>
-            <CheckBox Content="(.*)" 
-                      IsChecked="{Binding UseRegexSearch}"
-                      VerticalAlignment="Center"
-                      Margin="5,0"
-                      ToolTip="Use regular expressions (e.g., '^ERROR.*timeout$')"/>
+          
             <CheckBox Content="Filter to results" 
                       IsChecked="{Binding FilterSearchResults}"
                       VerticalAlignment="Center"
