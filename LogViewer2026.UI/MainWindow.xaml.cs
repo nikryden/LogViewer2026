@@ -83,6 +83,24 @@ public partial class MainWindow : Window
             LogEditor.TextArea.TextView.Redraw();
         };
 
+        // Handle multiline regex mode change
+        _viewModel.OnMultilineRegexModeChanged += (useMultiline) =>
+        {
+            _searchHighlighter.UseMultiline = useMultiline;
+
+            // Re-execute search if there's an active regex search
+            if (_viewModel.UseRegexSearch && !string.IsNullOrEmpty(_viewModel.SearchText))
+            {
+                UpdateSearchHighlighting();
+                if (_viewModel.FilterSearchResults)
+                {
+                    _viewModel.ApplySearchFilter();
+                }
+            }
+
+            LogEditor.TextArea.TextView.Redraw();
+        };
+
         // Handle editor actions
         _viewModel.OnSelectWholeLineRequested += SelectWholeLine;
         _viewModel.OnSelectAllRequested += SelectAll;
