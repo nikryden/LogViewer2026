@@ -49,7 +49,6 @@ public class SettingsServiceTests : IDisposable
             ShowLookingGlass = false,
             FilterSearchResults = true,
             Theme = "Dark",
-            CacheSize = 20000,
             ReloadToLastRow = true,
             UseRegexSearch = true
         };
@@ -62,7 +61,6 @@ public class SettingsServiceTests : IDisposable
         loaded.ShowLookingGlass.Should().BeFalse();
         loaded.FilterSearchResults.Should().BeTrue();
         loaded.Theme.Should().Be("Dark");
-        loaded.CacheSize.Should().Be(20000);
         loaded.ReloadToLastRow.Should().BeTrue();
         loaded.UseRegexSearch.Should().BeTrue();
     }
