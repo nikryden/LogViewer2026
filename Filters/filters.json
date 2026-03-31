@@ -1,0 +1,82 @@
+{
+  "Filters": [
+    {
+      "Name": "Errors Only",
+      "LogLevel": 4,
+      "StartTime": null,
+      "EndTime": null,
+      "SearchText": null,
+      "SourceContextFilter": null,
+      "ExcludeVerbose": false,
+      "ExcludeDebug": false,
+      "CreatedAt": "2026-02-24T20:38:33.3184184Z"
+    },
+    {
+      "Name": "Warnings and Above",
+      "LogLevel": 3,
+      "StartTime": null,
+      "EndTime": null,
+      "SearchText": null,
+      "SourceContextFilter": null,
+      "ExcludeVerbose": false,
+      "ExcludeDebug": false,
+      "CreatedAt": "2026-02-24T20:38:33.3184723Z"
+    },
+    {
+      "Name": "Info and Above",
+      "LogLevel": 2,
+      "StartTime": null,
+      "EndTime": null,
+      "SearchText": null,
+      "SourceContextFilter": null,
+      "ExcludeVerbose": false,
+      "ExcludeDebug": false,
+      "CreatedAt": "2026-02-24T20:38:33.3184724Z"
+    },
+    {
+      "Name": "Find Guids",
+      "LogLevel": null,
+      "StartTime": null,
+      "EndTime": null,
+      "SearchText": "[{(]?[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}[)}]?",
+      "SourceContextFilter": null,
+      "ExcludeVerbose": false,
+      "ExcludeDebug": false,
+      "CreatedAt": "2026-02-26T20:47:36.9970151Z"
+    },
+    {
+      "Name": "Regex Email",
+      "LogLevel": null,
+      "StartTime": null,
+      "EndTime": null,
+      "SearchText": "((?!\\.)[\\w-_.]*[^.])(@\\w\u002B)(\\.\\w\u002B(\\.\\w\u002B)?[^.\\W])",
+      "SourceContextFilter": null,
+      "ExcludeVerbose": false,
+      "ExcludeDebug": false,
+      "CreatedAt": "2026-02-26T20:57:32.7630757Z"
+    },
+    {
+      "Name": "Regex _ip",
+      "LogLevel": null,
+      "StartTime": null,
+      "EndTime": null,
+      "SearchText": "(?:[0-9]{1,3}\\.){3}[0-9]{1,3}",
+      "SourceContextFilter": null,
+      "ExcludeVerbose": false,
+      "ExcludeDebug": false,
+      "CreatedAt": "2026-02-26T21:07:12.4387147Z"
+    },
+    {
+      "Name": "Regex find between",
+      "LogLevel": null,
+      "StartTime": null,
+      "EndTime": null,
+      "SearchText": "\u003Cfrom\u003E([\\s\\S]*?)\u003Cto\u003E",
+      "SourceContextFilter": null,
+      "ExcludeVerbose": false,
+      "ExcludeDebug": false,
+      "CreatedAt": "2026-03-31T18:04:44.5985824Z"
+    }
+  ],
+  "LastUsedFilter": null
+}
