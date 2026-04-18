@@ -94,12 +94,12 @@ public partial class FilterWindow : Window
         }
     }
 
-    private void Apply_Click(object sender, RoutedEventArgs e)
+    private async void Apply_Click(object sender, RoutedEventArgs e)
     {
         // Apply filters when button is clicked using the command
         if (_viewModel?.ApplyFilterCommand?.CanExecute(null) == true)
         {
-            _viewModel.ApplyFilterCommand.Execute(null);
+            await _viewModel.ApplyFilterCommand.ExecuteAsync(null);
         }
         DialogResult = true;
     }

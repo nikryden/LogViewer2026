@@ -506,14 +506,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrEmpty(SearchText) || !FilterSearchResults)
         {
-            // If no search text or filter disabled, restore filtered/original text based on level filter
-            if (FilterLevel == null)
-            {
-                LogText = _dateFilteredText ?? _activeFileText ?? OriginalLogText;
-                StatusText = $"Showing all {TotalLogCount:N0} lines";
-            }
-            // Note: Don't reapply level filter here to avoid recursion
-            // The level filter is already applied if FilterLevel is set
+            // Restore to the date/level filtered text (or original if no filter active).
+            // _dateFilteredText already includes level+date filtering from ApplyFilterAsync.
+            LogText = _dateFilteredText ?? _activeFileText ?? OriginalLogText;
+            var lineCount = LogText.Length == 0 ? 0 : LogText.Count(c => c == '\n') + 1;
+            StatusText = $"Showing all {lineCount:N0} lines";
 
             // Clear cached regex when search is cleared
             _cachedRegex = null;
@@ -957,6 +954,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         var sb = new System.Text.StringBuilder(text.Length);
         int lineStart = 0;
+        bool lastTimestampedLinePassed = true; // For continuation lines (no timestamp), inherit the previous timestamped line's result
 
         for (int i = 0; i <= text.Length; i++)
         {
@@ -965,7 +963,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 var lineSpan = text.AsSpan(lineStart, i - lineStart);
 
                 bool passesLevelFilter = filterLevel == null || ContainsLogLevel(lineSpan, filterLevel.Value);
-                bool passesDateFilter = PassesDateTimeFilterStatic(lineSpan, filterStartTime, filterEndTime);
+                bool passesDateFilter = PassesDateTimeFilterStatic(lineSpan, filterStartTime, filterEndTime, ref lastTimestampedLinePassed);
 
                 if (passesLevelFilter && passesDateFilter)
                 {
@@ -980,7 +978,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         return sb.ToString();
     }
 
-    private static bool PassesDateTimeFilterStatic(ReadOnlySpan<char> line, DateTime? filterStartTime, DateTime? filterEndTime)
+    private static bool PassesDateTimeFilterStatic(ReadOnlySpan<char> line, DateTime? filterStartTime, DateTime? filterEndTime, ref bool lastTimestampedLinePassed)
     {
         if (filterStartTime == null && filterEndTime == null)
             return true;
@@ -988,15 +986,18 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         var timestamp = TryExtractTimestamp(line);
 
         if (timestamp == null)
-            return true;
+            return lastTimestampedLinePassed; // Continuation line inherits parent's result
+
+        bool passes = true;
 
         if (filterStartTime.HasValue && timestamp.Value < filterStartTime.Value)
-            return false;
+            passes = false;
 
         if (filterEndTime.HasValue && timestamp.Value > filterEndTime.Value)
-            return false;
+            passes = false;
 
-        return true;
+        lastTimestampedLinePassed = passes;
+        return passes;
     }
 
     private static DateTime? TryExtractTimestamp(ReadOnlySpan<char> line)
@@ -1012,7 +1013,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return null;
 
         // Try to find a date-like pattern (YYYY-MM-DD or DD/MM/YYYY)
-        for (int i = 0; i < Math.Min(line.Length - 10, 30); i++)
+        for (int i = 0; i <= Math.Min(line.Length - 10, 30); i++)
         {
             var segment = line.Slice(i, Math.Min(30, line.Length - i));
 
@@ -1054,7 +1055,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     private bool PassesDateTimeFilter(ReadOnlySpan<char> line)
-        => PassesDateTimeFilterStatic(line, FilterStartTime, FilterEndTime);
+    {
+        bool dummy = true;
+        return PassesDateTimeFilterStatic(line, FilterStartTime, FilterEndTime, ref dummy);
+    }
 
     [RelayCommand]
     private void ClearFilters()
@@ -1672,14 +1676,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             ? Array.Empty<string>()
             : currentDisplayedText.Split('\n');
 
-        // Early exit if no displayed lines to avoid Math.Clamp exception
-        if (displayedLines.Length == 0)
+        // Early exit if no displayed lines or invalid line number
+        if (displayedLines.Length == 0 || selectedLineNumber < 1 || selectedLineNumber > displayedLines.Length)
         {
             SelectedLookingGlas.Text = string.Empty;
             return;
         }
 
-        var dispIndex = Math.Clamp(selectedLineNumber - 1, 0, displayedLines.Length - 1);
+        var dispIndex = selectedLineNumber - 1;
         var currentLineText = displayedLines[dispIndex].TrimEnd('\r');
 
         // Calculate offset within displayed line

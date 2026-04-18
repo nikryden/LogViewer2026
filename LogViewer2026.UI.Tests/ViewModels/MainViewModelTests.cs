@@ -441,14 +441,16 @@ public class FilterLogTextTests
     [Fact]
     public void FilterLogText_ContinuationLines_AreAlwaysIncluded()
     {
-        // Lines without a timestamp (stack traces, multi-line messages) should pass through
+        // Continuation lines (stack traces) inherit their parent timestamped line's filter result.
+        // SerilogLine1 (12:59:59) is BEFORE start filter (13:00:00) so it and its continuation are excluded.
+        // SerilogLine4 (15:59:59) passes the filter.
         var text = SerilogLine1 + "\n   at Namespace.Class.Method() in File.cs:line 42\n" + SerilogLine4;
         var start = new DateTime(2026, 2, 12, 13, 0, 0);
 
         var result = MainViewModel.FilterLogText(text, null, start, null);
 
-        // Stack trace line has no timestamp, so it passes through
-        result.Should().Contain("at Namespace.Class.Method()");
+        // Stack trace line belongs to SerilogLine1 which is before the start filter, so it's excluded
+        result.Should().NotContain("at Namespace.Class.Method()");
         result.Should().Contain("Headers:");
         result.Should().NotContain("Method: GET");
     }
