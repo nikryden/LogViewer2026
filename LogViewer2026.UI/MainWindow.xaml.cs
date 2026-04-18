@@ -1062,6 +1062,60 @@ public partial class MainWindow : Window
         _viewModel.SearchText = string.Empty;
         SearchBox.Focus();
     }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var handle = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        System.Windows.Interop.HwndSource.FromHwnd(handle)?.AddHook(MaximizeWindowHook);
+    }
+
+    private static IntPtr MaximizeWindowHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == 0x0024) // WM_GETMINMAXINFO
+        {
+            var mmi = System.Runtime.InteropServices.Marshal.PtrToStructure<MINMAXINFO>(lParam);
+            var monitor = MonitorFromWindow(hwnd, 0x00000002); // MONITOR_DEFAULTTONEAREST
+            if (monitor != IntPtr.Zero)
+            {
+                var info = new MONITORINFO { cbSize = System.Runtime.InteropServices.Marshal.SizeOf<MONITORINFO>() };
+                GetMonitorInfo(monitor, ref info);
+                mmi.ptMaxPosition.x = info.rcWork.left - info.rcMonitor.left;
+                mmi.ptMaxPosition.y = info.rcWork.top - info.rcMonitor.top;
+                mmi.ptMaxSize.x = info.rcWork.right - info.rcWork.left;
+                mmi.ptMaxSize.y = info.rcWork.bottom - info.rcWork.top;
+            }
+            System.Runtime.InteropServices.Marshal.StructureToPtr(mmi, lParam, true);
+            handled = true;
+        }
+        return IntPtr.Zero;
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct POINT { public int x, y; }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct RECT { public int left, top, right, bottom; }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct MINMAXINFO
+    {
+        public POINT ptReserved, ptMaxSize, ptMaxPosition, ptMinTrackSize, ptMaxTrackSize;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor, rcWork;
+        public uint dwFlags;
+    }
 }
 
 // Simple RelayCommand for keyboard shortcuts
