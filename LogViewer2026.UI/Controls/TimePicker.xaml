@@ -1,0 +1,15 @@
+<UserControl x:Class="LogViewer2026.UI.Controls.TimePicker"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <ComboBox x:Name="HourCombo"
+                  Width="50"
+                  SelectionChanged="OnTimeChanged"
+                  VerticalContentAlignment="Center"/>
+        <TextBlock Text=":" VerticalAlignment="Center" Margin="2,0"/>
+        <ComboBox x:Name="MinuteCombo"
+                  Width="50"
+                  SelectionChanged="OnTimeChanged"
+                  VerticalContentAlignment="Center"/>
+    </StackPanel>
+</UserControl>

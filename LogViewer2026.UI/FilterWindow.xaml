@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LogViewer2026.UI"
+        xmlns:controls="clr-namespace:LogViewer2026.UI.Controls"
         mc:Ignorable="d"
         Title="Filter Settings - LogViewer2026" 
         Height="600" Width="500"
@@ -62,12 +63,12 @@
                                         Margin="5,0"
                                         ToolTip="Start date"
                                         SelectedDateChanged="FilterStartDatePicker_SelectedDateChanged"/>
-                            <TextBox x:Name="FilterStartTimeBox"
-                                     Width="80"
+                            <controls:TimePicker x:Name="FilterStartTimePicker"
+                                     Width="110"
                                      Margin="5,0"
-                                     ToolTip="Time (HH:mm or HH:mm:ss)"
-                                     TextChanged="FilterStartTimeBox_TextChanged"
-                                     Text="00:00"/>
+                                     ToolTip="Select start time"
+                                     SelectedTimeChanged="FilterStartTimePicker_SelectedTimeChanged"
+                                     SelectedTime="00:00:00"/>
                             <Button Click="ClearStartDateTime_Click"
                                     Content="✖"
                                     ToolTip="Clear From Date/Time"
@@ -89,12 +90,12 @@
                                         Margin="5,0"
                                         ToolTip="End date"
                                         SelectedDateChanged="FilterEndDatePicker_SelectedDateChanged"/>
-                            <TextBox x:Name="FilterEndTimeBox"
-                                     Width="80"
+                            <controls:TimePicker x:Name="FilterEndTimePicker"
+                                     Width="110"
                                      Margin="5,0"
-                                     ToolTip="Time (HH:mm or HH:mm:ss)"
-                                     TextChanged="FilterEndTimeBox_TextChanged"
-                                     Text="23:59"/>
+                                     ToolTip="Select end time"
+                                     SelectedTimeChanged="FilterEndTimePicker_SelectedTimeChanged"
+                                     SelectedTime="23:59:00"/>
                             <Button Click="ClearEndDateTime_Click"
                                     Content="✖"
                                     ToolTip="Clear To Date/Time"

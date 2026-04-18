@@ -7,70 +7,83 @@ namespace LogViewer2026.UI;
 public partial class FilterWindow : Window
 {
     private readonly MainViewModel _viewModel;
+    private bool _isInitializing;
 
     public FilterWindow(MainViewModel viewModel)
     {
+        _isInitializing = true;
         InitializeComponent();
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         DataContext = _viewModel;
+
+        // Sync time pickers to any pre-existing filter times so that saved filters
+        // with a time component are displayed and preserved correctly.
+        FilterStartTimePicker.SelectedTime = _viewModel.FilterStartTime.HasValue
+            ? _viewModel.FilterStartTime.Value.TimeOfDay
+            : TimeSpan.Zero;
+        FilterEndTimePicker.SelectedTime = _viewModel.FilterEndTime.HasValue
+            ? _viewModel.FilterEndTime.Value.TimeOfDay
+            : new TimeSpan(23, 59, 0);
+
+        _isInitializing = false;
     }
 
-    private void FilterStartTimeBox_TextChanged(object sender, TextChangedEventArgs e)
+    private void FilterStartTimePicker_SelectedTimeChanged(object sender, RoutedEventArgs e)
     {
-        if (_viewModel == null || sender is not System.Windows.Controls.TextBox textBox)
+        if (_viewModel == null)
             return;
 
-        UpdateFilterDateTime(isStartTime: true, textBox.Text);
+        UpdateFilterDateTime(isStartTime: true, FilterStartDatePicker.SelectedDate, FilterStartTimePicker.SelectedTime);
     }
 
-    private void FilterEndTimeBox_TextChanged(object sender, TextChangedEventArgs e)
+    private void FilterEndTimePicker_SelectedTimeChanged(object sender, RoutedEventArgs e)
     {
-        if (_viewModel == null || sender is not System.Windows.Controls.TextBox textBox)
+        if (_viewModel == null)
             return;
 
-        UpdateFilterDateTime(isStartTime: false, textBox.Text);
+        UpdateFilterDateTime(isStartTime: false, FilterEndDatePicker.SelectedDate, FilterEndTimePicker.SelectedTime);
     }
 
     private void FilterStartDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_viewModel == null || FilterStartTimeBox == null)
+        if (_viewModel == null)
             return;
 
-        UpdateFilterDateTime(isStartTime: true, FilterStartTimeBox.Text);
+        var picker = (DatePicker)sender;
+        UpdateFilterDateTime(isStartTime: true, picker.SelectedDate, FilterStartTimePicker.SelectedTime);
     }
 
     private void FilterEndDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_viewModel == null || FilterEndTimeBox == null)
+        if (_viewModel == null)
             return;
 
-        UpdateFilterDateTime(isStartTime: false, FilterEndTimeBox.Text);
+        var picker = (DatePicker)sender;
+        UpdateFilterDateTime(isStartTime: false, picker.SelectedDate, FilterEndTimePicker.SelectedTime);
     }
 
-    private void UpdateFilterDateTime(bool isStartTime, string timeText)
+    private void UpdateFilterDateTime(bool isStartTime, DateTime? pickedDate, TimeSpan time)
     {
-        if (_viewModel == null || string.IsNullOrWhiteSpace(timeText))
+        if (_viewModel == null || _isInitializing)
             return;
 
-        try
+        if (pickedDate == null)
         {
-            var currentDateTime = isStartTime ? _viewModel.FilterStartTime : _viewModel.FilterEndTime;
-            var date = currentDateTime?.Date ?? DateTime.Today;
-
-            if (TimeSpan.TryParse(timeText, out var time))
-            {
-                var newDateTime = date.Add(time);
-
-                if (isStartTime)
-                    _viewModel.FilterStartTime = newDateTime;
-                else
-                    _viewModel.FilterEndTime = newDateTime;
-            }
+            // No date selected in the picker — clear the date/time filter
+            if (isStartTime)
+                _viewModel.FilterStartTime = null;
+            else
+                _viewModel.FilterEndTime = null;
+            return;
         }
-        catch
-        {
-            // Ignore invalid time input
-        }
+
+        var date = pickedDate.Value.Date;
+        var newDateTime = date.Add(time);
+
+        if (isStartTime)
+            _viewModel.FilterStartTime = newDateTime;
+        else
+            _viewModel.FilterEndTime = newDateTime;
     }
 
     private void FilterSearchCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -81,12 +94,12 @@ public partial class FilterWindow : Window
         }
     }
 
-    private void Apply_Click(object sender, RoutedEventArgs e)
+    private async void Apply_Click(object sender, RoutedEventArgs e)
     {
         // Apply filters when button is clicked using the command
         if (_viewModel?.ApplyFilterCommand?.CanExecute(null) == true)
         {
-            _viewModel.ApplyFilterCommand.Execute(null);
+            await _viewModel.ApplyFilterCommand.ExecuteAsync(null);
         }
         DialogResult = true;
     }
@@ -101,7 +114,7 @@ public partial class FilterWindow : Window
         if (_viewModel != null)
         {
             _viewModel.FilterStartTime = null;
-            FilterStartTimeBox.Text = "00:00";
+            FilterStartTimePicker.SelectedTime = TimeSpan.Zero;
         }
     }
 
@@ -110,7 +123,7 @@ public partial class FilterWindow : Window
         if (_viewModel != null)
         {
             _viewModel.FilterEndTime = null;
-            FilterEndTimeBox.Text = "23:59";
+            FilterEndTimePicker.SelectedTime = new TimeSpan(23, 59, 0);
         }
     }
 }

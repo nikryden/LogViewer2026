@@ -39,7 +39,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -573,6 +573,7 @@
 
         <!-- Status Bar -->
         <StatusBar Grid.Row="6"
+                   VerticalAlignment="Bottom"
                    Background="Coral"
                    Foreground="Black"
                    
