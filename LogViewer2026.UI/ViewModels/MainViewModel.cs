@@ -123,6 +123,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private bool _showSelectedFileOnly;
 
     private string? _activeFileText;
+    private string? _dateFilteredText; // Cached result of level+date filtering; null when no such filter is active
 
     public event Action<string>? OnGoToFileRequested;
 
@@ -508,7 +509,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             // If no search text or filter disabled, restore filtered/original text based on level filter
             if (FilterLevel == null)
             {
-                LogText = _activeFileText ?? OriginalLogText;
+                LogText = _dateFilteredText ?? _activeFileText ?? OriginalLogText;
                 StatusText = $"Showing all {TotalLogCount:N0} lines";
             }
             // Note: Don't reapply level filter here to avoid recursion
@@ -520,7 +521,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var text = _activeFileText ?? OriginalLogText;
+        var text = _dateFilteredText ?? _activeFileText ?? OriginalLogText;
 
         // Early exit if text is empty
         if (string.IsNullOrEmpty(text))
@@ -745,6 +746,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SelectedDisplayFile = null;
             ShowSelectedFileOnly = false;
             _activeFileText = null;
+            _dateFilteredText = null;
 
             // Setup file monitoring
             _loadedFilePaths.Clear();
@@ -833,35 +835,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             await Task.Run(() =>
             {
                 var text = _activeFileText ?? OriginalLogText;
-                var sb = new System.Text.StringBuilder();
-                int filteredCount = 0;
-                int lineStart = 0;
-
-                for (int i = 0; i <= text.Length; i++)
-                {
-                    if (i == text.Length || text[i] == '\n')
-                    {
-                        var lineSpan = text.AsSpan(lineStart, i - lineStart);
-
-                        // Apply all filters: log level AND date/time range
-                        bool passesLevelFilter = FilterLevel == null || ContainsLogLevel(lineSpan, FilterLevel.Value);
-                        bool passesDateFilter = PassesDateTimeFilter(lineSpan);
-
-                        if (passesLevelFilter && passesDateFilter)
-                        {
-                            if (sb.Length > 0) sb.Append('\n');
-                            sb.Append(lineSpan);
-                            filteredCount++;
-                        }
-
-                        lineStart = i + 1;
-                    }
-                }
-
-                var filteredText = sb.ToString();
+                var filteredText = FilterLogText(text, FilterLevel, FilterStartTime, FilterEndTime);
+                var filteredCount = filteredText.Length == 0 ? 0 : filteredText.Count(c => c == '\n') + 1;
 
                 WpfApp.Current.Dispatcher.Invoke(() =>
                 {
+                    _dateFilteredText = filteredText;
                     LogText = filteredText;
 
                     // Build status message
@@ -971,6 +950,55 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         return false;
     }
 
+    internal static string FilterLogText(string text, LogLevel? filterLevel, DateTime? filterStartTime, DateTime? filterEndTime)
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        var sb = new System.Text.StringBuilder(text.Length);
+        int lineStart = 0;
+
+        for (int i = 0; i <= text.Length; i++)
+        {
+            if (i == text.Length || text[i] == '\n')
+            {
+                var lineSpan = text.AsSpan(lineStart, i - lineStart);
+
+                bool passesLevelFilter = filterLevel == null || ContainsLogLevel(lineSpan, filterLevel.Value);
+                bool passesDateFilter = PassesDateTimeFilterStatic(lineSpan, filterStartTime, filterEndTime);
+
+                if (passesLevelFilter && passesDateFilter)
+                {
+                    if (sb.Length > 0) sb.Append('\n');
+                    sb.Append(lineSpan);
+                }
+
+                lineStart = i + 1;
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static bool PassesDateTimeFilterStatic(ReadOnlySpan<char> line, DateTime? filterStartTime, DateTime? filterEndTime)
+    {
+        if (filterStartTime == null && filterEndTime == null)
+            return true;
+
+        var timestamp = TryExtractTimestamp(line);
+
+        if (timestamp == null)
+            return true;
+
+        if (filterStartTime.HasValue && timestamp.Value < filterStartTime.Value)
+            return false;
+
+        if (filterEndTime.HasValue && timestamp.Value > filterEndTime.Value)
+            return false;
+
+        return true;
+    }
+
     private static DateTime? TryExtractTimestamp(ReadOnlySpan<char> line)
     {
         // Common log timestamp patterns at the start of lines:
@@ -978,7 +1006,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         // 2024-01-15T10:30:45
         // [2024-01-15 10:30:45]
         // 2024-01-15 10:30:45.123
-        // 15/01/2024 10:30:45
+        // [2026-02-12 12:59:59.038 +01:00]  (Serilog format with timezone offset)
 
         if (line.Length < 10)
             return null;
@@ -1026,26 +1054,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     private bool PassesDateTimeFilter(ReadOnlySpan<char> line)
-    {
-        // If no date filter is set, pass all lines
-        if (FilterStartTime == null && FilterEndTime == null)
-            return true;
-
-        var timestamp = TryExtractTimestamp(line);
-
-        // If we couldn't extract a timestamp, include the line (might be multi-line log continuation)
-        if (timestamp == null)
-            return true;
-
-        // Check if timestamp is within the range
-        if (FilterStartTime.HasValue && timestamp.Value < FilterStartTime.Value)
-            return false;
-
-        if (FilterEndTime.HasValue && timestamp.Value > FilterEndTime.Value)
-            return false;
-
-        return true;
-    }
+        => PassesDateTimeFilterStatic(line, FilterStartTime, FilterEndTime);
 
     [RelayCommand]
     private void ClearFilters()
@@ -1059,6 +1068,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         FilterStartTime = null;
         FilterEndTime = null;
         SearchText = string.Empty;
+        _dateFilteredText = null;
 
         // Restore original text
         if (!string.IsNullOrEmpty(OriginalLogText))
@@ -1199,6 +1209,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SelectedDisplayFile = null;
             ShowSelectedFileOnly = false;
             _activeFileText = null;
+            _dateFilteredText = null;
 
             // Setup file monitoring
             _loadedFilePaths.Clear();
@@ -1265,6 +1276,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             SelectedDisplayFile = null;
             ShowSelectedFileOnly = false;
             _activeFileText = null;
+            _dateFilteredText = null;
 
             // Setup file monitoring
             _loadedFilePaths.Clear();

@@ -351,3 +351,153 @@ public class MainViewModelTests
         vm.StatusText.Should().Contain("Result 5 of 10");
     }
 }
+
+public class FilterLogTextTests
+{
+    private const string SerilogLine1 = "[2026-02-12 12:59:59.038 +01:00][][INF][Aptus.MultiserverEx.ApiCommunicator.DeviceApiCommunicator] Method: GET";
+    private const string SerilogLine2 = "[2026-02-12 13:30:59.038 +01:00][][INF][Aptus.MultiserverEx.ApiCommunicator.DeviceApiCommunicator] URI: \"device/Styra4000/BuSsBBNDR\"";
+    private const string SerilogLine3 = "[2026-02-12 13:40:59.038 +01:00][][INF][Aptus.MultiserverEx.ApiCommunicator.DeviceApiCommunicator] Version: 1.1";
+    private const string SerilogLine4 = "[2026-02-12 15:59:59.038 +01:00][][INF][Aptus.MultiserverEx.ApiCommunicator.DeviceApiCommunicator] Headers:";
+
+    private static string AllLines => string.Join("\n", SerilogLine1, SerilogLine2, SerilogLine3, SerilogLine4);
+
+    [Fact]
+    public void FilterLogText_WithNoFilters_ReturnsAllLines()
+    {
+        var result = MainViewModel.FilterLogText(AllLines, null, null, null);
+
+        result.Should().Contain("Method: GET");
+        result.Should().Contain("URI:");
+        result.Should().Contain("Version:");
+        result.Should().Contain("Headers:");
+    }
+
+    [Fact]
+    public void FilterLogText_SerilogFormat_FiltersByStartDate()
+    {
+        var start = new DateTime(2026, 2, 12, 13, 0, 0);
+
+        var result = MainViewModel.FilterLogText(AllLines, null, start, null);
+
+        result.Should().NotContain("Method: GET");   // 12:59 is before 13:00
+        result.Should().Contain("URI:");             // 13:30 passes
+        result.Should().Contain("Version:");         // 13:40 passes
+        result.Should().Contain("Headers:");         // 15:59 passes
+    }
+
+    [Fact]
+    public void FilterLogText_SerilogFormat_FiltersByEndDate()
+    {
+        var end = new DateTime(2026, 2, 12, 13, 59, 0);
+
+        var result = MainViewModel.FilterLogText(AllLines, null, null, end);
+
+        result.Should().Contain("Method: GET");      // 12:59 passes
+        result.Should().Contain("URI:");             // 13:30 passes
+        result.Should().Contain("Version:");         // 13:40 passes
+        result.Should().NotContain("Headers:");      // 15:59 is after 13:59
+    }
+
+    [Fact]
+    public void FilterLogText_SerilogFormat_FiltersByDateRange()
+    {
+        var start = new DateTime(2026, 2, 12, 13, 0, 0);
+        var end = new DateTime(2026, 2, 12, 13, 59, 0);
+
+        var result = MainViewModel.FilterLogText(AllLines, null, start, end);
+
+        result.Should().NotContain("Method: GET");   // 12:59 is before start
+        result.Should().Contain("URI:");             // 13:30 is in range
+        result.Should().Contain("Version:");         // 13:40 is in range
+        result.Should().NotContain("Headers:");      // 15:59 is after end
+    }
+
+    [Fact]
+    public void FilterLogText_SerilogFormat_ExactDateFilter_ReturnsOnlyThatDay()
+    {
+        var start = new DateTime(2026, 2, 12, 0, 0, 0);
+        var end = new DateTime(2026, 2, 12, 23, 59, 59);
+
+        var result = MainViewModel.FilterLogText(AllLines, null, start, end);
+
+        result.Should().Contain("Method: GET");
+        result.Should().Contain("URI:");
+        result.Should().Contain("Version:");
+        result.Should().Contain("Headers:");
+    }
+
+    [Fact]
+    public void FilterLogText_SerilogFormat_DifferentDateFilter_ReturnsNothing()
+    {
+        // Filter for a completely different date — all lines should be excluded
+        var start = new DateTime(2025, 1, 1, 0, 0, 0);
+        var end = new DateTime(2025, 1, 1, 23, 59, 59);
+
+        var result = MainViewModel.FilterLogText(AllLines, null, start, end);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void FilterLogText_ContinuationLines_AreAlwaysIncluded()
+    {
+        // Lines without a timestamp (stack traces, multi-line messages) should pass through
+        var text = SerilogLine1 + "\n   at Namespace.Class.Method() in File.cs:line 42\n" + SerilogLine4;
+        var start = new DateTime(2026, 2, 12, 13, 0, 0);
+
+        var result = MainViewModel.FilterLogText(text, null, start, null);
+
+        // Stack trace line has no timestamp, so it passes through
+        result.Should().Contain("at Namespace.Class.Method()");
+        result.Should().Contain("Headers:");
+        result.Should().NotContain("Method: GET");
+    }
+
+    [Fact]
+    public void FilterLogText_CombinesLevelAndDateFilters()
+    {
+        var lines = string.Join("\n",
+            "[2026-02-12 13:30:00.000 +01:00][][INF][Source] Info message",
+            "[2026-02-12 13:30:00.000 +01:00][][ERR][Source] Error message",
+            "[2026-02-12 15:00:00.000 +01:00][][ERR][Source] Late error");
+
+        var start = new DateTime(2026, 2, 12, 13, 0, 0);
+        var end = new DateTime(2026, 2, 12, 14, 0, 0);
+
+        var result = MainViewModel.FilterLogText(lines, LogLevel.Error, start, end);
+
+        result.Should().NotContain("Info message");
+        result.Should().Contain("Error message");
+        result.Should().NotContain("Late error");
+    }
+
+    [Fact]
+    public void FilterLogText_ThenSearch_SearchOperatesOnDateFilteredSubset()
+    {
+        // Arrange: three lines — only the middle one is in the date range
+        var line1 = "[2026-02-12 10:00:00.000 +01:00][][INF][Source] keyword early";
+        var line2 = "[2026-02-12 13:30:00.000 +01:00][][INF][Source] keyword in-range";
+        var line3 = "[2026-02-12 20:00:00.000 +01:00][][INF][Source] keyword late";
+        var allText = string.Join("\n", line1, line2, line3);
+
+        var start = new DateTime(2026, 2, 12, 13, 0, 0);
+        var end = new DateTime(2026, 2, 12, 14, 0, 0);
+
+        // Act: date-filter first (simulates what ApplyFilterAsync stores in _dateFilteredText)
+        var dateFiltered = MainViewModel.FilterLogText(allText, null, start, end);
+
+        // Assert: only the in-range line survives the date filter
+        dateFiltered.Should().Contain("in-range");
+        dateFiltered.Should().NotContain("early");
+        dateFiltered.Should().NotContain("late");
+
+        // Act: search runs on the date-filtered result (simulates ApplySearchFilter using _dateFilteredText)
+        var searchFiltered = dateFiltered.Split('\n')
+            .Where(l => l.Contains("keyword", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        // Assert: search finds only the in-range line, not the out-of-range "keyword early/late" lines
+        searchFiltered.Should().HaveCount(1);
+        searchFiltered[0].Should().Contain("in-range");
+    }
+}
